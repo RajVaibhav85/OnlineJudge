@@ -1,6 +1,8 @@
 const express = require('express');
 const User = require('../Models/User');
 const router = express.Router();
+const jwt = require('jsonwebtoken')
+const { protect } = require('../Middlewares/authenticate');
 
 router.post('/register' , async (req , res) => {
     const {username, email, password} = req.body;
@@ -11,10 +13,12 @@ router.post('/register' , async (req , res) => {
         }
 
         const user = await User.create({username, email, password})
+        const token = generateToken(user._id);
         res.status(201).json({
             id: user._id,
             username: user.username,
-            email: user.email
+            email: user.email,
+            token, 
         })
     }
     catch(err){
@@ -40,3 +44,13 @@ router.post('/login' , async (req , res) => {
         res.status(500).json({message: 'Internal Server Error'})
     }
 })
+
+router.get("/me", protect, async (req , res) => {
+    res.status(200).json(req.user)
+})
+
+const generateToken = (id) => {
+    return jwt.sign({id}, process.env.JWT_SECRET, {expireIn: "30d"})
+}
+
+module.exports = router;
