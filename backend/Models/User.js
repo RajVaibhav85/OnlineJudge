@@ -7,9 +7,6 @@ const userSchema = new mongoose.Schema({
         required: true,
         unique: true,
     },
-    name: {
-        type: String,
-    },
     email: {
         type: String,
         required: true,
@@ -19,20 +16,25 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-}, {timestamp: true})
+    dob: { 
+        type: Date,
+        required: true, 
+    },
+}, { timestamps: true })
 
+userSchema.pre('save', async function() {
+    const user = this;
 
-userSchema.pre('save', async function(next){
-    if(!this.isModified('password')) next()
-    
+    if (!user.isModified('password')) {
+        return;
+    }
     const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt)
-    next()
-})
+    user.password = await bcrypt.hash(user.password, salt);
+});
 
 userSchema.methods.matchPassword = async function(enteredPassword){
-    return await bcrypt.compare(enteredPassword, this.password)
-}
+    return await bcrypt.compare(enteredPassword, this.password);
+};
 
 const User = mongoose.model('User', userSchema)
 
