@@ -9,13 +9,8 @@ router.post('/register', async (req, res, next) => {
     const { username, email, password, dob } = req.body;
     try {
         const user = await User.create({ username, email, password, dob });
-        const token = generateToken(user._id);
-        res.cookie('accessToken', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'Strict',
-            maxAge: 15 * 60 * 1000,
-        });
+
+        sendTokens(res, user._id);
 
         res.status(201).json({
             id: user._id,
@@ -43,13 +38,7 @@ router.post('/login', async (req, res, next) => {
             return res.status(401).json({ message: 'Invalid Credentials' });
         }
 
-        const token = generateToken(user._id);
-        res.cookie('accessToken', token, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'Strict',
-            maxAge: 15 * 60 * 1000,
-        });
+        sendTokens(res, user._id);
 
         return res.status(200).json({
             id: user._id,
@@ -64,6 +53,7 @@ router.post('/login', async (req, res, next) => {
 
 router.post('/logout', (req, res) => {
     res.clearCookie('accessToken');
+    res.clearCookie('refreshToken', { path: '/api/auth/refresh' });
     res.status(200).json({ message: 'Logged out' });
 });
 
@@ -80,8 +70,59 @@ router.get("/me", protect, async (req, res, next) => {
         next(error);
     }
 });
-const generateToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "15m" });
+
+router.post('/refresh', async (req, res) => {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+        return res.status(401).json({ message: "Refresh Token Missing" });
+    }
+
+    try {
+        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+        const newAccessToken = generateAccessToken(decoded.id);
+
+        res.cookie('accessToken', newAccessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'Strict',
+            maxAge: 15 * 60 * 1000,
+        });
+
+        return res.status(200).json({ message: "Token refreshed successfully" });
+    } catch (err) {
+        return res.status(403).json({ message: "Invalid or Expired Refresh Token" });
+    }
+});
+
+const sendTokens = (res, userId) => {
+    const accessToken = generateAccessToken(userId);
+    const refreshToken = generateRefreshToken(userId);
+
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    res.cookie('accessToken', accessToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: 'Strict',
+        maxAge: 15 * 60 * 1000,
+    });
+
+    res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: 'Strict',
+        path: '/api/auth/refresh',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+};
+
+const generateAccessToken = (id) => {
+    return jwt.sign({ id }, process.env.JWT_ACCESS_SECRET, { expiresIn: '15m' });
+};
+
+const generateRefreshToken = (id) => {
+    return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
 };
 
 module.exports = router;
