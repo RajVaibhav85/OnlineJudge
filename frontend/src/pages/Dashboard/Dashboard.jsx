@@ -482,6 +482,7 @@ export default function Dashboard() {
       <nav style={s.nav}>
         <p style={s.navTitle}>Online Judge</p>
         <button style={s.logoutBtn} onClick={handleLogout}>Logout</button>
+        <button style={s.logoutBtn} onClick={() => navigate('/coder')}>Code Editor</button>
       </nav>
 
       <main style={s.main}>

@@ -38,5 +38,3 @@ dist/
 dist-ssr/
 frontend/dist/
 
-# for current push, i dont want to push these files into git-hub
-frontend/src/pages/CodeEditor
