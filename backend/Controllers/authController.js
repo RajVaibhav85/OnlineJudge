@@ -1,11 +1,10 @@
 const express = require('express');
 const User = require('../Models/Users');
-const router = express.Router();
 const jwt = require('jsonwebtoken');
-const protect = require('../Middlewares/authenticate');
 
 
-router.post('/register', async (req, res, next) => { 
+
+const register = async (req, res, next) => { 
     const { username, email, password, dob } = req.body;
     try {
         const user = await User.create({ username, email, password, dob });
@@ -22,9 +21,9 @@ router.post('/register', async (req, res, next) => {
     catch (err) {
         next(err);
     }
-});
+};
 
-router.post('/login', async (req, res, next) => {
+const login = async (req, res, next) => {
     const { email, password } = req.body;
 
     try {
@@ -49,15 +48,15 @@ router.post('/login', async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-});
+};
 
-router.post('/logout', (req, res) => {
+const logout = (req, res) => {
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken', { path: '/api/auth/refresh' });
     res.status(200).json({ message: 'Logged out' });
-});
+};
 
-router.get("/me", protect, async (req, res, next) => {
+const me = async (req, res, next) => {
     try {
         const currentUser = await User.findById(req.user.id).select('-password');
         
@@ -69,9 +68,9 @@ router.get("/me", protect, async (req, res, next) => {
     } catch (error) {
         next(error);
     }
-});
+};
 
-router.post('/refresh', async (req, res) => {
+const refresh = async (req, res) => {
     const refreshToken = req.cookies.refreshToken;
 
     if (!refreshToken) {
@@ -93,7 +92,7 @@ router.post('/refresh', async (req, res) => {
     } catch (err) {
         return res.status(403).json({ message: "Invalid or Expired Refresh Token" });
     }
-});
+};
 
 const sendTokens = (res, userId) => {
     const accessToken = generateAccessToken(userId);
@@ -118,11 +117,19 @@ const sendTokens = (res, userId) => {
 };
 
 const generateAccessToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_ACCESS_SECRET, { expiresIn: '15m' });
+    console.log("Generating Access Token for user ID:", id);
+    return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '15m' });
 };
 
 const generateRefreshToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+    console.log("Generating Refresh Token for user ID:", id);
+    return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
-module.exports = router;
+module.exports = {
+    register,
+    login,
+    logout,
+    refresh,
+    me
+};

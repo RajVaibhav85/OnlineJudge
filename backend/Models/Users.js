@@ -32,8 +32,8 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true })
 
 userSchema.pre('save', async function() {
-    const user = this;
-
+    const user = this;                      // before storing password in DB, it is hashed
+                                            // by bcrypt and stored in DB
     if (!user.isModified('password')) {
         return;
     }

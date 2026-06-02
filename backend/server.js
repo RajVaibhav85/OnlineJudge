@@ -3,7 +3,6 @@ const express = require("express");
 const path = require("path");
 const app = express();
 const dotenv = require('dotenv');
-const authRoutes = require('./Routes/auth')
 const connectDB = require('./config/db')
 const cookieParser = require('cookie-parser');
 
@@ -21,10 +20,14 @@ connectDB()
 const PORT = process.env.PORT || 5000;
 
 app.get('/' , (req , res) => {
-    res.status(200).send('HomePage: Health chech route');
+    res.status(200).send('HomePage: Health check route');
 })
 
+const authRoutes = require('./Routes/authRoutes')
 app.use('/api/auth', authRoutes)
+
+const compilerRoutes = require('./Routes/compilerRoutes')
+app.use('/api/compiler', compilerRoutes)
 
 // GLOBAL ERROR HANDLING MIDDLEWARE
 app.use((err, req, res, next) => {
