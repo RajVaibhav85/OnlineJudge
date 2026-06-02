@@ -7,44 +7,108 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  const parseJsonSafe = async (res) => {
+    const contentType = res.headers.get("content-type")
+    if (contentType && contentType.includes("application/json")) {
+      return await res.json()
+    }
+    return {}
+  }
+
   useEffect(() => {
-    fetch(`${API}/me`, { credentials: 'include' })
-      .then(res => res.ok ? res.json() : null)
-      .then(data => setUser(data))
-      .finally(() => setLoading(false))
+    const checkAuthSession = async () => {
+      try {
+        const res = await fetch(`${API}/me`, { credentials: 'include' })
+        
+        if (res.ok) {
+          const data = await res.json()
+          setUser(data)
+        } else if (res.status === 401) {
+          const refreshRes = await fetch(`${API}/refresh`, { 
+            method: 'POST', 
+            credentials: 'include' 
+          })
+
+          if (refreshRes.ok) {
+            const retryMeRes = await fetch(`${API}/me`, { credentials: 'include' })
+            if (retryMeRes.ok) {
+              const data = await retryMeRes.json()
+              setUser(data)
+            } else {
+              setUser(null)
+            }
+          } else {
+            setUser(null)
+          }
+        } else {
+          setUser(null)
+        }
+      } catch (err) {
+        console.error("Auth session check failed:", err)
+        setUser(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    checkAuthSession()
   }, [])
 
   const login = async (email, password) => {
-    const res = await fetch(`${API}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ email, password }),
-    })
-    const data = await res.json()
-    if (res.ok) setUser(data)
-    return { ok: res.ok, message: data.message }
-  }
+    try {
+      const res = await fetch(`${API}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      })
 
+      const data = await parseJsonSafe(res)
+
+      if (res.ok) {
+        setUser(data)
+        return { ok: true }
+      }
+
+      return { ok: false, message: data.message || `Error: ${res.status}` }
+
+    } catch (err) {
+      return { ok: false, message: "Network connection lost. Please try again." }
+    }
+  }
 
   const register = async ({ username, email, password, dob }) => {
-    const res = await fetch(`${API}/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ username, email, password, dob }),
-    })
-    const data = await res.json()
-    if (res.ok) setUser(data)
-    return { ok: res.ok, message: data.message }
-  }
+    try {
+      const res = await fetch(`${API}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ username, email, password, dob }),
+      })
 
+      const data = await parseJsonSafe(res)
+
+      if (res.ok) {
+        setUser(data)
+        return { ok: true }
+      }
+
+      return { ok: false, message: data.message || `Error: ${res.status}` }
+
+    } catch (err) {
+      return { ok: false, message: "Failed to connect to the registration server." }
+    }
+  }
 
   const logout = async () => {
-    await fetch(`${API}/logout`, { method: 'POST', credentials: 'include' })
-    setUser(null)
+    try {
+      await fetch(`${API}/logout`, { method: 'POST', credentials: 'include' })
+    } catch (err) {
+      console.error("Logout request failed", err)
+    } finally {
+      setUser(null)
+    }
   }
-  
 
   return (
     <AuthContext.Provider value={{ user, loading, login, register, logout }}>

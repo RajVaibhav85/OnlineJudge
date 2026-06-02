@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../Models/User');
+const User = require('../Models/Users');
 
 const protect = async (req, res, next) => {
     const token = req.cookies?.accessToken;         // read http-only cookie
