@@ -30,6 +30,7 @@ const problemSchema = new mongoose.Schema({
   },
   difficulty: {
     type: String,
+    required: [true, "Difficulty level is required"],
     enum: {
       values: ['Easy', 'Medium', 'Hard'],
       message: "Difficulty must be Easy, Medium, or Hard"

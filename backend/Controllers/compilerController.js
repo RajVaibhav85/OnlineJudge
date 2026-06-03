@@ -3,6 +3,7 @@ const path = require('path')
 const { v4: uuid } = require('uuid')
 const dirCodes = path.join(__dirname, '..', 'codes');
 const dirOutputs = path.join(__dirname, '..', 'outputs');
+const dirInputs = path.join(__dirname, '..', 'inputs');
 const { exec } = require('child_process');
 
 
@@ -17,11 +18,11 @@ const deleteFileSafe = (filepath) => {
 };
 
 
-const runCpp = (filepath) => {
+const runCpp = (filepath, inputFilePath) => {
     return new Promise((resolve, reject) => {
         const filename = path.basename(filepath).split('.')[0];
         const outputFile = path.join(dirOutputs, `${filename}.out`);
-        const command = `g++ ${filepath} -o ${outputFile} && cd ${dirOutputs} && ./${filename}.out`;
+        const command = `g++ ${filepath} -o ${outputFile} && cd ${dirOutputs} && ./${filename}.out < ${inputFilePath}`;
         exec(command, (error, stdout, stderr) => {
             if (error) {
                 reject({ msg: stderr || error.message, outputFile });
@@ -68,19 +69,22 @@ const runJava = (filepath) => {
 
 
 const runCode = async (req, res, next) => {
-    const { language, code } = req.body;
+    const { language, code, input = "" } = req.body;
     let filepath = "";
     let outputFileToDelete = "";
+    let inputFilePath = ""
 
     try {
         if (!fs.existsSync(dirCodes)) fs.mkdirSync(dirCodes);
         if (!fs.existsSync(dirOutputs)) fs.mkdirSync(dirOutputs);
+        if (!fs.existsSync(dirInputs)) fs.mkdirSync(dirInputs);
         
         filepath = generateFile(language, code);
+        inputFilePath = generateFile('txt', input);
         let result = null;
 
         if (language === 'cpp') {
-            result = await runCpp(filepath);
+            result = await runCpp(filepath, inputFilePath);
             outputFileToDelete = result.outputFile;
         } else if (language === 'python') {
             result = await runPython(filepath);
@@ -94,6 +98,7 @@ const runCode = async (req, res, next) => {
 
         deleteFileSafe(filepath);
         deleteFileSafe(outputFileToDelete);
+        deleteFileSafe(inputFilePath);
         
         return res.status(200).json({ success: true, output: result.stdout });
 
@@ -120,10 +125,11 @@ const generateFile = (language = 'cpp', code) => {
         cpp: 'cpp',
         python: 'py',
         javascript: 'js',
-        java: 'java'
+        java: 'java',
+        txt: 'txt'
     };
     
-    const extension = extensions[language] || 'txt';
+    const extension = extensions[language];
     const filename = `${uuid()}.${extension}`;
     const filepath = path.join(dirCodes, filename);
     fs.writeFileSync(filepath, code);
