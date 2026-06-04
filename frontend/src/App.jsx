@@ -12,7 +12,7 @@ function App() {
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route 
-            path="/dashboard" 
+            path="/:username" 
             element={
               <ProtectedRoute>
                 <Dashboard />
@@ -20,7 +20,7 @@ function App() {
             } 
           />
           <Route 
-            path="/coder" 
+            path="/:username/:code" 
             element={
               <ProtectedRoute>
                 <Coder />

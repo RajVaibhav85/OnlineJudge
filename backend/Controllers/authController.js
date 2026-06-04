@@ -4,6 +4,19 @@ const jwt = require('jsonwebtoken');
 
 
 
+// {
+//     "username": "abc123",
+//     "email": "abc123@gmail.com",
+//     "password": "123456"
+// }
+
+// {
+//     "email": "abc123@gmail.com",
+//     "password": "123456"
+// }
+
+
+
 const register = async (req, res, next) => { 
     const { username, email, password, dob } = req.body;
     try {

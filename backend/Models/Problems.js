@@ -53,6 +53,14 @@ const problemSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  tags: {
+    type: [String],
+    trim: true,
+    enum: {
+      values: ['Array', 'String', 'Dynamic Programming', 'Graph', 'Tree', 'Math', 'Greedy', 'Backtracking', 'Sorting', 'Searching', 'Hash Table', 'Two Pointers', 'Sliding Window', 'Recursion', 'Bit Manipulation', 'Design', 'Database'],
+      message: "Tag must be one of the predefined categories"
+    }
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

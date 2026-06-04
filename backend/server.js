@@ -32,7 +32,7 @@ app.use('/api/compiler', compilerRoutes)
 const aiRoutes = require('./Routes/aiRoutes')
 app.use('/api/ai', aiRoutes);
 
-const dbRoutes = require('./Routes/dbRotes')
+const dbRoutes = require('./Routes/dbRoutes')
 app.use('/api/db', dbRoutes);
 
 // GLOBAL ERROR HANDLING MIDDLEWARE
