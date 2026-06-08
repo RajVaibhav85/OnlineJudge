@@ -1,8 +1,5 @@
-const express = require('express');
-const router = express.Router();
-const protect = require('../Middlewares/authMiddleware');
-const dbController = require('../Controllers/dbController')
 const Problem = require('../Models/Problems');
+const TestCase = require('../Models/TestCases');
 
 
 const insertProblem = async (req, res) => {
@@ -97,10 +94,148 @@ const getProblem = async (req, res) => {
     }
 }
 
+const updateProblem = async (req, res) => {
+  try {
+    const { code } = req.params;
+    const updateData = req.body;
+
+    if (updateData.code) {
+      delete updateData.code;
+    }
+
+    const updatedProblem = await Problem.findOneAndUpdate(
+      { code: code.toLowerCase() },
+      updateData,
+      { 
+        new: true,
+        runValidators: true,
+        context: 'query' 
+      }
+    );
+
+    if (!updatedProblem) {
+      return res.status(404).json({
+        success: false,
+        message: `Problem log matching code index '${code}' could not be located.`
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Problem parameters updated successfully.",
+      data: updatedProblem
+    });
+
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(val => val.message);
+      return res.status(400).json({ success: false, message: messages });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "An internal pipeline error occurred while updating problem metrics." + error.message
+    });
+  }
+};
+
+const deleteProblem = async (req, res) => {
+  try {
+    const { code } = req.params;
+
+    const deletedProblem = await Problem.findOneAndDelete({ code: code.toLowerCase() });
+
+    if (!deletedProblem) {
+      return res.status(404).json({
+        success: false,
+        message: `Problem index registry mapping '${code}' does not exist.`
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Problem registry cluster '${code}' successfully purged from the system core.`
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed execution parameters during database record teardown lifecycle." + error.message
+    });
+  }
+};
+
+const insertTestCases = async (req, res) => {
+  try{
+      const { code } = req.params;
+      const problem = await Problem.findOne({ code: code.toLowerCase() });
+      
+      if (!problem) {
+          return res.status(404).json({ message: "Problem not found" });
+      }
+      const { testCases } = req.body;
+      if (!Array.isArray(testCases) || testCases.length === 0) {
+          return res.status(400).json({ message: "Test cases must be a non-empty array." });
+      }
+      const testCaseDocs = testCases.map(tc => ({
+          problem: problem._id,
+          input: tc.input,
+          output: tc.output,
+          isHidden: tc.isHidden || false,
+          timeLimit: tc.timeLimit || problem.timeLimit,
+          memoryLimit: tc.memoryLimit || problem.memoryLimit
+      }));
+      await TestCase.insertMany(testCaseDocs);
+      res.status(201).json({ message: "Test cases inserted successfully.",
+        testCases: testCaseDocs.map((tc, index) => ({
+          input: tc.input,
+          output: tc.output,
+          isHidden: tc.isHidden,
+          timeLimit: tc.timeLimit,
+          memoryLimit: tc.memoryLimit
+        }))
+      });
+  }
+  catch(err){
+    res.status(400).json({
+      success: false,
+      message: "Failed execution parameters during database record teardown lifecycle." + err.message
+    })
+  }
+}
+
+const getTestCases = async (req, res) => {
+  try {
+    const { code } = req.params;
+    const problem = await Problem.findOne({ code: code.toLowerCase() });
+    
+    if (!problem) {
+        return res.status(404).json({ message: "Problem not found" });
+    }
+    
+    const testCases = await TestCase.find({ problem: problem._id }).select('-problem -__v');
+    
+    res.status(200).json({
+      success: true,
+      count: testCases.length,
+      data: testCases
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve test cases." + err.message
+    });
+  }
+}
+
 module.exports = {
     insertProblem,
     getProblems,
-    getProblem
+    getProblem,
+    updateProblem,
+    deleteProblem,
+    insertTestCases,
+    getTestCases
 }
 
 // ### INSERT PROBLEM
@@ -148,4 +283,39 @@ module.exports = {
 //   "difficulty": "Medium",
 //   "tags": "['Array','Math']",
 //   "search": "sum"
+// }
+
+
+// ### insert-testcases/:code
+
+// {
+//   "testCases": [
+//     {
+//       "input": "4\n1 2 3 1",
+//       "output": "true",
+//       "isHidden": false,
+//       "timeLimit": 1000,
+//       "memoryLimit": 128
+//     },
+//     {
+//       "input": "4\n1 2 3 4",
+//       "output": "false",
+//       "isHidden": false
+//     },
+//     {
+//       "input": "10\n1 1 1 3 3 4 3 2 4 2",
+//       "output": "true",
+//       "isHidden": true
+//     },
+//     {
+//       "input": "3\n-1000000000 1000000000 -1000000000",
+//       "output": "true",
+//       "isHidden": true
+//     },
+//     {
+//       "input": "1\n42",
+//       "output": "false",
+//       "isHidden": true
+//     }
+//   ]
 // }
