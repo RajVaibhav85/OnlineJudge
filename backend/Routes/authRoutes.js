@@ -10,9 +10,11 @@ router.post('/login', authController.login);
 
 router.post('/logout', authController.logout);
 
-router.get("/me", protect, authController.me);
-
 router.post('/refresh', authController.refresh);
+
+router.put('/change-password', protect, authController.changePassword);
+
+router.get('/me', protect, authController.me);
 
 
 module.exports = router;

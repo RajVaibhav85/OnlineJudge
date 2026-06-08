@@ -4,6 +4,7 @@ import Auth from './pages/Authentication/Authentication'
 import Dashboard from './pages/Dashboard/Dashboard'
 import Coder from './pages/Coder/Coder'
 import ProtectedRoute from './components/ProtectedRoute'
+import ProfilePage from "./pages/Profile/Profile";
 
 function App() {
   return (
@@ -16,6 +17,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/:username/profile" 
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
               </ProtectedRoute>
             } 
           />

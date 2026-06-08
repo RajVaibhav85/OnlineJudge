@@ -18,9 +18,10 @@ const jwt = require('jsonwebtoken');
 
 
 const register = async (req, res, next) => { 
-    const { username, email, password, dob } = req.body;
+    let { username, email, password, dob, role } = req.body;
+    if(!role) role = 'user'
     try {
-        const user = await User.create({ username, email, password, dob });
+        const user = await User.create({ username, email, password, dob, role });
 
         sendTokens(res, user._id);
 
@@ -29,6 +30,7 @@ const register = async (req, res, next) => {
             username: user.username,
             email: user.email,
             dob: user.dob,
+            user: user.role,
         });
     }
     catch (err) {
@@ -56,6 +58,7 @@ const login = async (req, res, next) => {
             id: user._id,
             username: user.username,
             email: user.email,
+            role: user.role,
         });
 
     } catch (err) {
@@ -63,24 +66,41 @@ const login = async (req, res, next) => {
     }
 };
 
-const logout = (req, res) => {
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken', { path: '/api/auth/refresh' });
-    res.status(200).json({ message: 'Logged out' });
-};
-
 const me = async (req, res, next) => {
     try {
         const currentUser = await User.findById(req.user.id).select('-password');
-        
         if (!currentUser) {
             return res.status(404).json({ message: "User no longer exists" });
         }
-        
         res.status(200).json(currentUser);
     } catch (error) {
         next(error);
     }
+};
+
+const changePassword = async (req, res, next) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        const isMatch = await user.matchPassword(currentPassword);
+        if (!isMatch) return res.status(400).json({ message: "Incorrect current password" });
+
+        user.password = newPassword; 
+        await user.save(); 
+
+        res.status(200).json({ success: true, message: "Password updated successfully" });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const logout = (req, res) => {
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken', { path: '/api/auth/refresh' });
+    res.status(200).json({ message: 'Logged out' });
 };
 
 const refresh = async (req, res) => {
@@ -136,7 +156,7 @@ const generateAccessToken = (id) => {
 
 const generateRefreshToken = (id) => {
     console.log("Generating Refresh Token for user ID:", id);
-    return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
 };
 
 module.exports = {
@@ -144,5 +164,6 @@ module.exports = {
     login,
     logout,
     refresh,
-    me
+    me,
+    changePassword
 };

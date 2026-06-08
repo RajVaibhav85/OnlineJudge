@@ -1,9 +1,3 @@
-// ■ Statement : CharField
-// ■ Name : CharField
-// ■ Code : CharField
-// ■ Difficulty : CharField - Hard/Easy/Medium (Optional)
-
-
 const mongoose = require('mongoose');
 
 const problemSchema = new mongoose.Schema({
@@ -52,6 +46,18 @@ const problemSchema = new mongoose.Schema({
   constraints: {
     type: String,
     trim: true
+  },
+  timeLimit: {
+    type: Number,
+    required: [true, "Time limit is required"],
+    max: [10000, "Time limit cannot exceed 10000ms (10 seconds)"],
+    default: 2000
+  },
+  memoryLimit: {
+    type: Number,
+    required: [true, "Memory limit is required"],
+    max: [512, "Memory limit cannot exceed 512MB"],
+    default: 128
   },
   tags: {
     type: [String],

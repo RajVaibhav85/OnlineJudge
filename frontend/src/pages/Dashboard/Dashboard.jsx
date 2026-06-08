@@ -104,6 +104,7 @@ export default function Dashboard() {
     <div style={s.page}>
       <nav style={s.nav}>
         <p style={s.navTitle}>Online Judge Dashboard</p>
+        <button style={{ ...s.logoutBtn, background: '#111', color: '#fff', border: 'none' }} onClick={() => navigate(`/${user.username}/profile`)}>Profile</button>
         <button style={s.logoutBtn} onClick={async () => { await logout(); navigate('/auth') }}>Logout</button>
       </nav>
 
