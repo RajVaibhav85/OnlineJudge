@@ -20,10 +20,6 @@ const testCaseSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  explanation: {
-    type: String,
-    trim: true
-  },
   timeLimit: {
     type: Number,
     default: 1000 // milliseconds
