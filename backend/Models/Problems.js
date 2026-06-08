@@ -1,9 +1,3 @@
-// ■ Statement : CharField
-// ■ Name : CharField
-// ■ Code : CharField
-// ■ Difficulty : CharField - Hard/Easy/Medium (Optional)
-
-
 const mongoose = require('mongoose');
 
 const problemSchema = new mongoose.Schema({
@@ -30,6 +24,7 @@ const problemSchema = new mongoose.Schema({
   },
   difficulty: {
     type: String,
+    required: [true, "Difficulty level is required"],
     enum: {
       values: ['Easy', 'Medium', 'Hard'],
       message: "Difficulty must be Easy, Medium, or Hard"
@@ -51,6 +46,26 @@ const problemSchema = new mongoose.Schema({
   constraints: {
     type: String,
     trim: true
+  },
+  timeLimit: {
+    type: Number,
+    required: [true, "Time limit is required"],
+    max: [10000, "Time limit cannot exceed 10000ms (10 seconds)"],
+    default: 2000
+  },
+  memoryLimit: {
+    type: Number,
+    required: [true, "Memory limit is required"],
+    max: [512, "Memory limit cannot exceed 512MB"],
+    default: 128
+  },
+  tags: {
+    type: [String],
+    trim: true,
+    enum: {
+      values: ['Array', 'String', 'Dynamic Programming', 'Graph', 'Tree', 'Math', 'Greedy', 'Backtracking', 'Sorting', 'Searching', 'Hash Table', 'Two Pointers', 'Sliding Window', 'Recursion', 'Bit Manipulation', 'Design', 'Database'],
+      message: "Tag must be one of the predefined categories"
+    }
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,

@@ -4,6 +4,7 @@ import Auth from './pages/Authentication/Authentication'
 import Dashboard from './pages/Dashboard/Dashboard'
 import Coder from './pages/Coder/Coder'
 import ProtectedRoute from './components/ProtectedRoute'
+import ProfilePage from "./pages/Profile/Profile";
 
 function App() {
   return (
@@ -12,7 +13,7 @@ function App() {
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route 
-            path="/dashboard" 
+            path="/:username" 
             element={
               <ProtectedRoute>
                 <Dashboard />
@@ -20,7 +21,15 @@ function App() {
             } 
           />
           <Route 
-            path="/coder" 
+            path="/:username/profile" 
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/:username/:code" 
             element={
               <ProtectedRoute>
                 <Coder />
