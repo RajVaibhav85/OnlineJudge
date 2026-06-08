@@ -247,7 +247,6 @@
 
 
 
-
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
@@ -268,18 +267,18 @@ export default function Coder() {
     const { username, code: problemCode } = useParams();
     const navigate = useNavigate();
 
-    // DOM references for tracking layout sizes without third-party tools
+    // DOM references
     const containerRef = useRef(null);
     const rightPanelRef = useRef(null);
+    const editorRef = useRef(null); // Added to keep track of the Monaco instance
 
     const [problem, setProblem] = useState(null);
     const [testCases, setTestCases] = useState([]);
     const [fetchingData, setFetchingData] = useState(true);
 
-    const [code, setCode] = useState(boilerplates.cpp);
     const [language, setLanguage] = useState('cpp');
     
-    // UI Layout percentages (Controlled via raw mouse movements)
+    // UI Layout percentages
     const [leftPanelWidth, setLeftPanelWidth] = useState(40); 
     const [editorHeight, setEditorHeight] = useState(60);     
 
@@ -300,6 +299,14 @@ export default function Coder() {
     const renderDataSafely = (dataBlock) => {
         if (!dataBlock) return '';
         return typeof dataBlock === 'string' ? dataBlock : JSON.stringify(dataBlock, null, 2);
+    };
+
+    // Helper to get current code from Monaco safely
+    const getEditorCode = () => {
+        if (editorRef.current) {
+            return editorRef.current.getValue();
+        }
+        return boilerplates[language];
     };
 
     // Native Horizontal Dragger Handler
@@ -382,11 +389,16 @@ export default function Coder() {
         return () => { isMounted = false; };
     }, [problemCode]);
 
+    // Handle language shifts cleanly without resetting cursor position mid-type
     useEffect(() => {
-        if (language && boilerplates[language]) {
-            setCode(boilerplates[language]);
+        if (language && boilerplates[language] && editorRef.current) {
+            editorRef.current.setValue(boilerplates[language]);
         }
     }, [language]);
+
+    const handleEditorDidMount = (editor) => {
+        editorRef.current = editor;
+    };
 
     const handleCustomRun = async () => {
         setActionLoading(true);
@@ -398,7 +410,7 @@ export default function Coder() {
             const response = await fetch(`${COMPILER_API}/run`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ language, code, input: customInput }),
+                body: JSON.stringify({ language, code: getEditorCode(), input: customInput }),
                 credentials: 'include'
             });
             const data = await response.json();
@@ -433,12 +445,13 @@ export default function Coder() {
         }
 
         try {
+            const currentCode = getEditorCode();
             const evaluationPipeline = targetScopeCases.map(async (tc, index) => {
                 try {
                     const response = await fetch(`${COMPILER_API}/run`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ language, code, input: tc.input }),
+                        body: JSON.stringify({ language, code: currentCode, input: tc.input }),
                         credentials: 'include'
                     });
                     const data = await response.json();
@@ -494,7 +507,7 @@ export default function Coder() {
             const response = await fetch(`${AI_API}/ai-review`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code, language, description: problem ? problem.statement : '' }),
+                body: JSON.stringify({ code: getEditorCode(), language, description: problem ? problem.statement : '' }),
                 credentials: 'include'
             });
             const data = await response.json();
@@ -625,8 +638,8 @@ export default function Coder() {
                             height="100%"
                             theme="vs-dark"
                             language={language}
-                            value={code}
-                            onChange={(val) => setCode(val || '')}
+                            defaultValue={boilerplates[language]}
+                            onMount={handleEditorDidMount}
                             options={{ fontSize: 13, minimap: { enabled: false }, automaticLayout: true, padding: { top: 10 } }}
                         />
                     </div>
