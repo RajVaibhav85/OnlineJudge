@@ -15,6 +15,8 @@ const insertProblem = async (req, res) => {
             description,
             sampleInput,
             sampleOutput,
+            timeLimit,
+            memoryLimit,
             constraints,
             tags,
             createdBy
@@ -34,6 +36,8 @@ const insertProblem = async (req, res) => {
             description,
             sampleInput,
             sampleOutput,
+            timeLimit,
+            memoryLimit,
             constraints,
             tags,
             createdBy
