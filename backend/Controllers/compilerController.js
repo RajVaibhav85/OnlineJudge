@@ -1,11 +1,11 @@
 const fs = require('fs')
 const path = require('path')
 const { v4: uuid } = require('uuid')
+const { exec } = require('child_process');
+
 const dirCodes = path.join(__dirname, '..', 'codes');
 const dirOutputs = path.join(__dirname, '..', 'outputs');
 const dirInputs = path.join(__dirname, '..', 'inputs');
-const { exec } = require('child_process');
-
 
 const deleteFileSafe = (filepath) => {
     if (filepath && fs.existsSync(filepath)) {
@@ -16,7 +16,6 @@ const deleteFileSafe = (filepath) => {
         }
     }
 };
-
 
 const runCpp = (filepath, inputFilePath) => {
     return new Promise((resolve, reject) => {
@@ -33,22 +32,9 @@ const runCpp = (filepath, inputFilePath) => {
     });
 };
 
-const runPython = (filepath) => {
+const runPython = (filepath, inputFilePath) => {
     return new Promise((resolve, reject) => {
-        const command = `python3 ${filepath}`;
-        exec(command, (error, stdout, stderr) => {
-            if (error) {
-                reject({ msg: stderr || error.message });
-            } else {
-                resolve({ stdout: stdout || stderr });
-            }
-        });
-    });
-};
-
-const runJs = (filepath) => {
-    return new Promise((resolve, reject) => {
-        const command = `node ${filepath}`;
+        const command = `python3 ${filepath} < ${inputFilePath}`;
         exec(command, (error, stdout, stderr) => {
             if (error) reject({ msg: stderr || error.message });
             else resolve({ stdout: stdout || stderr });
@@ -56,9 +42,9 @@ const runJs = (filepath) => {
     });
 };
 
-const runJava = (filepath) => {
+const runJs = (filepath, inputFilePath) => {
     return new Promise((resolve, reject) => {
-        const command = `java ${filepath}`;
+        const command = `node ${filepath} < ${inputFilePath}`;
         exec(command, (error, stdout, stderr) => {
             if (error) reject({ msg: stderr || error.message });
             else resolve({ stdout: stdout || stderr });
@@ -66,61 +52,17 @@ const runJava = (filepath) => {
     });
 };
 
-
-
-const runCode = async (req, res, next) => {
-    const { language, code, input = "" } = req.body;
-    let filepath = "";
-    let outputFileToDelete = "";
-    let inputFilePath = ""
-
-    try {
-        if (!fs.existsSync(dirCodes)) fs.mkdirSync(dirCodes);
-        if (!fs.existsSync(dirOutputs)) fs.mkdirSync(dirOutputs);
-        if (!fs.existsSync(dirInputs)) fs.mkdirSync(dirInputs);
-        
-        filepath = generateFile(language, code);
-        inputFilePath = generateFile('txt', input);
-        let result = null;
-
-        if (language === 'cpp') {
-            result = await runCpp(filepath, inputFilePath);
-            outputFileToDelete = result.outputFile;
-        } else if (language === 'python') {
-            result = await runPython(filepath);
-        } else if (language === 'javascript') {
-            result = await runJs(filepath);
-        } else if (language === 'java') {
-            result = await runJava(filepath);
-        } else {
-            throw new Error(`Unsupported language: ${language}`);
-        }
-
-        deleteFileSafe(filepath);
-        deleteFileSafe(outputFileToDelete);
-        deleteFileSafe(inputFilePath);
-        
-        return res.status(200).json({ success: true, output: result.stdout });
-
-    } catch (err) {
-        deleteFileSafe(filepath);
-        if (err.outputFile) {
-            deleteFileSafe(err.outputFile);
-        } else {
-            deleteFileSafe(outputFileToDelete);
-        }
-        
-        const errorMessage = err.msg || (typeof err === 'string' ? err : (err.message || 'Error running code'));
-        console.error("Execution Error:", errorMessage);
-
-        return res.status(400).json({ 
-            success: false, 
-            error: errorMessage
+const runJava = (filepath, inputFilePath) => {
+    return new Promise((resolve, reject) => {
+        const command = `java ${filepath} < ${inputFilePath}`;
+        exec(command, (error, stdout, stderr) => {
+            if (error) reject({ msg: stderr || error.message });
+            else resolve({ stdout: stdout || stderr });
         });
-    }
-}
+    });
+};
 
-const generateFile = (language = 'cpp', code) => {
+const generateFile = (type, content, targetDir) => {
     const extensions = {
         cpp: 'cpp',
         python: 'py',
@@ -128,12 +70,51 @@ const generateFile = (language = 'cpp', code) => {
         java: 'java',
         txt: 'txt'
     };
-    
-    const extension = extensions[language];
-    const filename = `${uuid()}.${extension}`;
-    const filepath = path.join(dirCodes, filename);
-    fs.writeFileSync(filepath, code);
+    const filename = `${uuid()}.${extensions[type]}`;
+    const filepath = path.join(targetDir, filename);
+    fs.writeFileSync(filepath, content);
     return filepath;
+};
+
+const runCode = async (req, res, next) => {
+    const { language, code, input = "" } = req.body;
+    let filepath = "";
+    let inputFilePath = "";
+    let outputFileToDelete = "";
+
+    try {
+        if (!fs.existsSync(dirCodes)) fs.mkdirSync(dirCodes);
+        if (!fs.existsSync(dirOutputs)) fs.mkdirSync(dirOutputs);
+        if (!fs.existsSync(dirInputs)) fs.mkdirSync(dirInputs);
+        
+        filepath = generateFile(language, code, dirCodes);
+        inputFilePath = generateFile('txt', input, dirInputs);
+        let result = null;
+
+        if (language === 'cpp') {
+            result = await runCpp(filepath, inputFilePath);
+            outputFileToDelete = result.outputFile;
+        } else if (language === 'python') {
+            result = await runPython(filepath, inputFilePath);
+        } else if (language === 'javascript') {
+            result = await runJs(filepath, inputFilePath);
+        } else if (language === 'java') {
+            result = await runJava(filepath, inputFilePath);
+        } else {
+            throw new Error(`Unsupported language: ${language}`);
+        }
+
+        return res.status(200).json({ success: true, output: result.stdout });
+
+    } catch (err) {
+        if (err.outputFile) outputFileToDelete = err.outputFile;
+        const errorMessage = err.msg || (typeof err === 'string' ? err : (err.message || 'Error running code'));
+        return res.status(400).json({ success: false, error: errorMessage });
+    } finally {
+        deleteFileSafe(filepath);
+        deleteFileSafe(inputFilePath);
+        deleteFileSafe(outputFileToDelete);
+    }
 }
 
 module.exports = {
