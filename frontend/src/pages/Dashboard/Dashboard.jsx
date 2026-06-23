@@ -28,7 +28,9 @@ const s = {
   difficultyEasy: { background: '#d1fae5', color: '#047857' },
   difficultyMedium: { background: '#fef3c7', color: '#b45309' },
   difficultyHard: { background: '#fee2e2', color: '#dc2626' },
-  tagBadge: { fontSize: '11px', background: '#f0f0f0', color: '#666', padding: '2px 6px', borderRadius: '4px', marginRight: '4px' }
+  tagBadge: { fontSize: '11px', background: '#f0f0f0', color: '#666', padding: '2px 6px', borderRadius: '4px', marginRight: '4px' },
+  testForm: { display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'center' },
+  launchBtn: { background: '#4f46e5', color: '#fff', border: 'none', padding: '9px 20px', borderRadius: '6px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer' }
 }
 
 export default function Dashboard() {
@@ -42,6 +44,12 @@ export default function Dashboard() {
   const [selectedTags, setSelectedTags] = useState([])
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isFetching, setIsFetching] = useState(true)
+
+  // Custom TestHub Settings Panel State
+  const [testDuration, setTestDuration] = useState('30')
+  const [testDifficulty, setTestDifficulty] = useState('Mixed')
+  const [testTags, setTestTags] = useState([])
+  const [isTestTagDropdownOpen, setIsTestTagDropdownOpen] = useState(false)
 
   useEffect(() => {
     if (!loading && !user) navigate('/auth')
@@ -59,29 +67,82 @@ export default function Dashboard() {
     const params = new URLSearchParams()
     if (difficulty) params.append('difficulty', difficulty)
     if (search) params.append('search', search)
-    
-    if (selectedTags.length > 0) {
-      params.append('tags', selectedTags.join(','))
-    }
+    if (selectedTags.length > 0) params.append('tags', selectedTags.join(','))
 
     setIsFetching(true)
-    
     fetch(`${BACKEND_URL}/api/db/get-problems?${params.toString()}`)
-      .then(res => {
-        if (!res.ok) throw new Error(`Server returned ${res.status}`);
-        return res.json();
-      })
+      .then(res => res.json())
       .then(resData => {
         if (resData.success) setProblems(resData.data)
         setIsFetching(false)
       })
       .catch(err => {
-        console.error("Failed to load questions from database:", err)
+        console.error(err)
         setIsFetching(false)
       })
   }, [search, difficulty, selectedTags, user])
 
-  const handleTagToggle = (tag) => {
+  const handleLaunchMockTest = () => {
+    // 1. Build Query Params based on Test Selection Requirements
+    const params = new URLSearchParams()
+    if (testDifficulty !== 'Mixed') {
+      params.append('difficulty', testDifficulty)
+    }
+    if (testTags.length > 0) {
+      params.append('tags', testTags.join(','))
+    }
+
+    // 2. Fetch specific dynamic candidate problems pool
+    fetch(`${BACKEND_URL}/api/db/get-problems?${params.toString()}`)
+      .then(res => res.json())
+      .then(async (resData) => {
+        if (!resData.success || !resData.data || resData.data.length === 0) {
+          alert('No problems found in the database matching your criteria. Try different tags or choices!');
+          return;
+        }
+
+        // 3. Keep a maximum slice selection of up to 4 dynamic questions randomly chosen from matching rows
+        const structuralPool = [...resData.data].sort(() => 0.5 - Math.random()).slice(0, 4);
+
+        try {
+          // 4. Hit the Engine endpoint with the exact property name 'problemIds' the backend requires
+          const sessionRes = await fetch(`${BACKEND_URL}/api/testhub/session/start`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              duration: Number(testDuration) * 60,
+              problemIds: structuralPool.map(p => p._id) // Changed from 'problems' to 'problemIds'
+            }),
+            credentials: 'include'
+          });
+
+          const sessionData = await sessionRes.json();
+
+          if (!sessionRes.ok) {
+            throw new Error(sessionData.message || 'Could not instantiate a valid database session instance.');
+          }
+
+          // 5. Initialize ALL Local Storage Sync parameters expected by the TestHub layout
+          sessionStorage.setItem('testhub_active', 'true');
+          sessionStorage.setItem('testhub_session_id', sessionData.sessionId || sessionData.data?._id || sessionData._id);
+          sessionStorage.setItem('testhub_problems', JSON.stringify(structuralPool));
+          sessionStorage.setItem('testhub_duration_seconds', String(Number(testDuration) * 60));
+
+          // 6. Route user safely into TestHub page without triggering the security fallback interceptor
+          navigate(`/${user.username}/test-yourself`);
+
+        } catch (sessionError) {
+          console.error(sessionError);
+          alert(`Session Creation Failed: ${sessionError.message}`);
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert('An issue occurred initializing your testing configuration instance.');
+      });
+  }
+
+  const handleGlobalTagToggle = (tag) => {
     if (selectedTags.includes(tag)) {
       setSelectedTags(selectedTags.filter(t => t !== tag));
     } else {
@@ -89,13 +150,22 @@ export default function Dashboard() {
     }
   };
 
-  useEffect(() => {
-    const closeMenu = () => setIsDropdownOpen(false);
-    if (isDropdownOpen) {
-      window.addEventListener('click', closeMenu);
+  const handleTestTagToggle = (tag) => {
+    if (testTags.includes(tag)) {
+      setTestTags(testTags.filter(t => t !== tag));
+    } else {
+      setTestTags([...testTags, tag]);
     }
-    return () => window.removeEventListener('click', closeMenu);
-  }, [isDropdownOpen]);
+  };
+
+  useEffect(() => {
+    const closeMenus = () => {
+      setIsDropdownOpen(false)
+      setIsTestTagDropdownOpen(false)
+    }
+    window.addEventListener('click', closeMenus)
+    return () => window.removeEventListener('click', closeMenus)
+  }, [])
 
   if (loading) return <div style={{ padding: '40px', color: '#888' }}>Loading Auth Profile...</div>
   if (!user) return null
@@ -104,62 +174,105 @@ export default function Dashboard() {
     <div style={s.page}>
       <nav style={s.nav}>
         <p style={s.navTitle}>Online Judge Dashboard</p>
-        <button style={{ ...s.logoutBtn, background: '#111', color: '#fff', border: 'none' }} onClick={() => navigate(`/${user.username}/profile`)}>Profile</button>
-        <button style={s.logoutBtn} onClick={async () => { await logout(); navigate('/auth') }}>Logout</button>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          {user.role === 'admin' && (
+            <button 
+              style={{ ...s.logoutBtn, background: '#4f46e5', color: '#fff', border: 'none', fontWeight: '500' }} 
+              onClick={() => navigate(`/${user.username}/admin`)}
+            >
+              Admin Dashboard
+            </button>
+          )}
+          <button style={{ ...s.logoutBtn, background: '#111', color: '#fff', border: 'none' }} onClick={() => navigate(`/${user.username}/profile`)}>Profile</button>
+          <button style={s.logoutBtn} onClick={async () => { await logout(); navigate('/auth') }}>Logout</button>
+        </div>
       </nav>
 
       <main style={s.main}>
         <h1 style={s.welcome}>Welcome back, {user.username} 👋</h1>
-        <p style={s.welcomeSub}>Manage workspace filters or choose a problem below to open the code editor.</p>
+        <p style={s.welcomeSub}>Manage workspace filters or create custom mock examinations down below.</p>
 
+        {/* Dynamic TestHub Workspace Configurator Panel */}
+        <div style={{ ...s.card, border: '1px dashed #4f46e5', background: '#f8fafc' }}>
+          <p style={{ ...s.cardTitle, color: '#4f46e5' }}>⚡ Custom Performance Mock Exam Panel</p>
+          <div style={s.testForm}>
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', color: '#666', marginBottom: '4px' }}>Duration (Minutes)</label>
+              <select style={s.select} value={testDuration} onChange={e => setTestDuration(e.target.value)}>
+                <option value="15">15 Minutes</option>
+                <option value="30">30 Minutes</option>
+                <option value="45">45 Minutes</option>
+                <option value="60">60 Minutes</option>
+                <option value="90">90 Minutes</option>
+              </select>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', color: '#666', marginBottom: '4px' }}>Problem Difficulty Tier</label>
+              <select style={s.select} value={testDifficulty} onChange={e => setTestDifficulty(e.target.value)}>
+                <option value="Mixed">Mixed (All Tiers)</option>
+                <option value="Easy">Easy</option>
+                <option value="Medium">Medium</option>
+                <option value="Hard">Hard</option>
+              </select>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', color: '#666', marginBottom: '4px' }}>Filter Categories (Multiple)</label>
+              <div style={s.multiSelectContainer} onClick={e => e.stopPropagation()}>
+                <div style={s.multiSelectBox} onClick={() => setIsTestTagDropdownOpen(!isTestTagDropdownOpen)}>
+                  <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '180px' }}>
+                    {testTags.length === 0 ? 'All Categories Selected' : `Selected (${testTags.length})`}
+                  </span>
+                  <span>{isTestTagDropdownOpen ? '▲' : '▼'}</span>
+                </div>
+                {isTestTagDropdownOpen && (
+                  <div style={s.dropdownMenu}>
+                    {AVAILABLE_TAGS.map(tag => {
+                      const isChecked = testTags.includes(tag);
+                      return (
+                        <div key={tag} style={{ ...s.dropdownItem, background: isChecked ? '#f0f7ff' : 'transparent' }} onClick={() => handleTestTagToggle(tag)}>
+                          <input type="checkbox" checked={isChecked} onChange={() => {}} />
+                          <span>{tag}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <button style={{ ...s.launchBtn, alignSelf: 'flex-end', height: '38px' }} onClick={handleLaunchMockTest}>
+              Start Examination Session
+            </button>
+          </div>
+        </div>
+
+        {/* Standard Challenges Catalog List */}
         <div style={s.card}>
-          <p style={s.cardTitle}>🎛️ Filter Challenges</p>
+          <p style={s.cardTitle}>🎛️ Filter General Challenges</p>
           <div style={s.filterBar}>
-            
-            <input 
-              style={s.input} 
-              type="text" 
-              placeholder="Search by name..." 
-              value={search} 
-              onChange={e => setSearch(e.target.value)}
-            />
-
+            <input style={s.input} type="text" placeholder="Search by name..." value={search} onChange={e => setSearch(e.target.value)} />
             <select style={s.select} value={difficulty} onChange={e => setDifficulty(e.target.value)}>
               <option value="">All Difficulties</option>
               <option value="Easy">Easy</option>
               <option value="Medium">Medium</option>
               <option value="Hard">Hard</option>
             </select>
-
             <div style={s.multiSelectContainer} onClick={e => e.stopPropagation()}>
               <div style={s.multiSelectBox} onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
-                <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '180px', color: selectedTags.length === 0 ? '#757575' : '#111' }}>
-                  {selectedTags.length === 0 
-                    ? 'Select Tags...' 
-                    : `Tags (${selectedTags.length}): ${selectedTags.slice(0, 2).join(', ')}${selectedTags.length > 2 ? '...' : ''}`
-                  }
+                <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '180px' }}>
+                  {selectedTags.length === 0 ? 'Select Tags...' : `Tags (${selectedTags.length})`}
                 </span>
                 <span>{isDropdownOpen ? '▲' : '▼'}</span>
               </div>
-
               {isDropdownOpen && (
                 <div style={s.dropdownMenu}>
                   {AVAILABLE_TAGS.map(tag => {
                     const isChecked = selectedTags.includes(tag);
                     return (
-                      <div 
-                        key={tag} 
-                        style={{ ...s.dropdownItem, background: isChecked ? '#f0f7ff' : 'transparent' }} 
-                        onClick={() => handleTagToggle(tag)}
-                        onMouseEnter={e => e.currentTarget.style.backgroundColor = isChecked ? '#e0f0ff' : '#f5f5f5'}
-                        onMouseLeave={e => e.currentTarget.style.backgroundColor = isChecked ? '#f0f7ff' : 'transparent'}
-                      >
-                        <input 
-                          type="checkbox" 
-                          checked={isChecked} 
-                          onChange={() => {}} 
-                          style={{ cursor: 'pointer' }}
-                        />
+                      <div key={tag} style={{ ...s.dropdownItem, background: isChecked ? '#f0f7ff' : 'transparent' }} onClick={() => handleGlobalTagToggle(tag)}>
+                        <input type="checkbox" checked={isChecked} onChange={() => {}} />
                         <span>{tag}</span>
                       </div>
                     );
@@ -167,34 +280,24 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-
           </div>
         </div>
 
         <div style={s.card}>
-          <p style={s.cardTitle}>⚡ Challenges ({problems.length})</p>
+          <p style={s.cardTitle}>⚡ Active Catalog Database ({problems.length})</p>
           <div>
             {isFetching ? (
-              <p style={{ padding: '20px', color: '#888' }}>Loading problems matches...</p>
+              <p style={{ padding: '20px', color: '#888' }}>Loading challenges...</p>
             ) : problems.length === 0 ? (
               <p style={{ padding: '20px', color: '#888' }}>No problems match criteria.</p>
             ) : (
               problems.map(p => (
-                <div 
-                  key={p.code} 
-                  style={s.problemRow} 
-                  onClick={() => navigate(`/${user.username}/${p.code}`)}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f9f9f9'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff'}
-                >
+                <div key={p.code} style={s.problemRow} onClick={() => navigate(`/${user.username}/${p.code}`)}>
                   <div style={{ flex: 1 }}>
                     <div style={{ ...s.problemName, marginBottom: '4px' }}>{p.name}</div>
                     <div>{p.tags?.map(t => <span key={t} style={s.tagBadge}>{t}</span>)}</div>
                   </div>
-                  <span style={{ 
-                    ...s.problemDifficulty, 
-                    ...(p.difficulty === 'Easy' ? s.difficultyEasy : p.difficulty === 'Medium' ? s.difficultyMedium : s.difficultyHard)
-                  }}>
+                  <span style={{ ...s.problemDifficulty, ...(p.difficulty === 'Easy' ? s.difficultyEasy : p.difficulty === 'Medium' ? s.difficultyMedium : s.difficultyHard) }}>
                     {p.difficulty}
                   </span>
                   <span>→</span>
