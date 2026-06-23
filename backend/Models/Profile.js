@@ -18,31 +18,25 @@ const profileSchema = new mongoose.Schema({
         website: { type: String, default: "" }
     },
     skills: {
-        languages: [{
-            type: String,
-            trim: true 
-        }],
-        frameworks: [{
-            type: String,
-            trim: true 
-        }]
+        languages: [{ type: String, trim: true }],
+        frameworks: [{ type: String, trim: true }]
     },
     stats: {
-        problemsSolved: {
-            type: Number,
-            default: 0
-        },
+        problemsSolved: { type: Number, default: 0 },
         difficultyBreakdown: {
             easy: { type: Number, default: 0 },
             medium: { type: Number, default: 0 },
             hard: { type: Number, default: 0 }
         },
+        // Refers explicitly to Problem model using the unique 'code' string field
         solvedProblemsList: [{
-            type: String
+            type: String,
+            ref: 'Problem',
+            localField: 'stats.solvedProblemsList',
+            foreignField: 'code'
         }]
     }
 }, { timestamps: true });
 
 const Profile = mongoose.model('Profile', profileSchema);
-
 module.exports = Profile;
