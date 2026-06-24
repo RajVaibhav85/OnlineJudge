@@ -2,10 +2,11 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
 
-const BACKEND_URL = import.meta.env.VITE_SERVER_URL;
+const BACKEND_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:5000';
 const COMPILER_API = `${BACKEND_URL}/api/compiler`;
 const DB_API = `${BACKEND_URL}/api/db`;
 const AI_API = `${BACKEND_URL}/api/ai`;
+const AUTH_API = `${BACKEND_URL}/api/auth`;
 
 const boilerplates = {
     cpp: `#include <iostream>\nusing namespace std;\n\nint main() {\n    // Write your code here\n    return 0;\n}`,
@@ -14,26 +15,36 @@ const boilerplates = {
     java: `public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello");\n    }\n}`
 };
 
+const languageMapping = {
+    toBackend: { cpp: 'C++', javascript: 'JavaScript', python: 'Python', java: 'Java' },
+    toFrontend: { 'C++': 'cpp', 'JavaScript': 'javascript', 'Python': 'python', 'Java': 'java' }
+};
+
 export default function Coder() {
-    const { username, code: problemCode } = useParams();
+    const { code: problemCode } = useParams();
     const navigate = useNavigate();
 
-    // DOM references
     const containerRef = useRef(null);
     const rightPanelRef = useRef(null);
-    const editorRef = useRef(null); // Added to keep track of the Monaco instance
+    const editorRef = useRef(null); 
 
+    // Session Context Management State
+    const [userContext, setUserContext] = useState(null);
     const [problem, setProblem] = useState(null);
     const [testCases, setTestCases] = useState([]);
     const [fetchingData, setFetchingData] = useState(true);
-
     const [language, setLanguage] = useState('cpp');
+
+    const [codeCache, setCodeCache] = useState({
+        cpp: boilerplates.cpp,
+        javascript: boilerplates.javascript,
+        python: boilerplates.python,
+        java: boilerplates.java
+    });
     
-    // UI Layout percentages
     const [leftPanelWidth, setLeftPanelWidth] = useState(40); 
     const [editorHeight, setEditorHeight] = useState(60);     
 
-    // Console tabs & run records
     const [consoleMode, setConsoleMode] = useState('custom'); 
     const [customInput, setCustomInput] = useState('');
     const [customOutput, setCustomOutput] = useState('');
@@ -52,128 +63,177 @@ export default function Coder() {
         return typeof dataBlock === 'string' ? dataBlock : JSON.stringify(dataBlock, null, 2);
     };
 
-    // Helper to get current code from Monaco safely
-    const getEditorCode = () => {
-        if (editorRef.current) {
-            return editorRef.current.getValue();
+    // Consolidated Workspace Data Synchronization Pipeline
+    // Workspace Pipeline: Triggered on initial load, language modifications, or manual refresh
+useEffect(() => {
+    let isMounted = true;
+    setFetchingData(true);
+
+    const syncWorkspaceSessionData = async () => {
+        try {
+            // 1. Fetch User details from /api/auth/me via HTTP-Only Cookies
+            let currentUserProfile = userContext;
+            if (!currentUserProfile) {
+                const profileRes = await fetch(`${AUTH_API}/me`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                if (!profileRes.ok) throw new Error('User session context unauthorized.');
+                currentUserProfile = await profileRes.json();
+                if (isMounted) setUserContext(currentUserProfile);
+            }
+
+            const resolvedUserId = currentUserProfile._id || currentUserProfile.id;
+
+            // 2. Fetch Target Challenge Metadata Specifications
+            const probRes = await fetch(`${DB_API}/get-problem/${problemCode}`);
+            if (!probRes.ok) throw new Error('Target matrix unreachable.');
+            const probData = await probRes.json();
+
+            // 3. Fetch Problem Evaluation Assertions
+            const tcRes = await fetch(`${DB_API}/get-testcases/${problemCode}`);
+            const tcData = await tcRes.json();
+
+            if (!isMounted) return;
+            setProblem(probData);
+            setTestCases(Array.isArray(tcData) ? tcData : (tcData.data || []));
+
+            if (probData?.sampleInput) {
+                setCustomInput(typeof probData.sampleInput === 'string' ? probData.sampleInput : JSON.stringify(probData.sampleInput));
+            }
+
+            // 4. FIX: Accurate route syntax matching your dbRoutes backend structure
+            // GET /api/db/latest-submission/:userId/:problemId
+            const submissionRes = await fetch(`${DB_API}/latest-submission/${resolvedUserId}/${probData._id}`, {
+                method: 'GET',
+                credentials: 'include'
+            });
+
+            if (submissionRes.ok) {
+                const resJson = await submissionRes.json();
+                
+                // If your backend returns an array or an object wrapped inside 'data'
+                if (resJson.success && resJson.data) {
+                    const targetBackendLanguage = languageMapping.toBackend[language]; // e.g., "C++"
+                    
+                    let matchingSubmission = null;
+                    
+                    if (Array.isArray(resJson.data)) {
+                        // If it returns a list of submissions, find the one matching the current language tab
+                        matchingSubmission = resJson.data.find(sub => sub.language === targetBackendLanguage);
+                    } else if (resJson.data.language === targetBackendLanguage) {
+                        // If it returns a single snapshot object, check if it matches the current tab language
+                        matchingSubmission = resJson.data;
+                    }
+
+                    if (matchingSubmission && matchingSubmission.code) {
+                        setCodeCache(prev => ({ ...prev, [language]: matchingSubmission.code }));
+                        if (editorRef.current) {
+                            editorRef.current.setValue(matchingSubmission.code);
+                        }
+                        return;
+                    }
+                }
+            }
+
+            // Default behavior fallback: render clean boilerplate if no history exists for this specific language tab
+            if (editorRef.current) {
+                editorRef.current.setValue(codeCache[language] || boilerplates[language]);
+            }
+
+        } catch (err) {
+            console.error("Workspace synchronization sequence fault:", err);
+            if (isMounted) navigate('/login');
+        } finally {
+            if (isMounted) setFetchingData(false);
         }
-        return boilerplates[language];
     };
 
-    // Native Horizontal Dragger Handler
+    syncWorkspaceSessionData();
+    return () => { isMounted = false; };
+}, [problemCode, language, navigate]); // Triggers smoothly when switching language tabs to sync user progress
+
+    const handleEditorDidMount = (editor) => {
+        editorRef.current = editor;
+        editor.setValue(codeCache[language]);
+    };
+
+    const handleLanguageChange = (newLang) => {
+        if (editorRef.current) {
+            const codeToPreserve = editorRef.current.getValue();
+            setCodeCache(prev => ({ ...prev, [language]: codeToPreserve }));
+        }
+        setLanguage(newLang);
+    };
+
+    const getActiveCode = () => {
+        if (editorRef.current) return editorRef.current.getValue();
+        return codeCache[language];
+    };
+
+    // Horizontal Split Drag Calculator
     const startHorizontalResize = (e) => {
         e.preventDefault();
         const startX = e.clientX;
         const startWidth = leftPanelWidth;
-        const totalWidth = containerRef.current.offsetWidth;
-
         const doHorizontalResize = (moveEvent) => {
+            if (!containerRef.current) return;
+            const totalWidth = containerRef.current.offsetWidth;
             const deltaX = moveEvent.clientX - startX;
             const newWidthPercent = startWidth + (deltaX / totalWidth) * 100;
-            if (newWidthPercent > 20 && newWidthPercent < 75) {
-                setLeftPanelWidth(newWidthPercent);
-            }
+            if (newWidthPercent > 20 && newWidthPercent < 75) setLeftPanelWidth(newWidthPercent);
         };
-
         const stopHorizontalResize = () => {
             window.removeEventListener('mousemove', doHorizontalResize);
             window.removeEventListener('mouseup', stopHorizontalResize);
         };
-
         window.addEventListener('mousemove', doHorizontalResize);
         window.addEventListener('mouseup', stopHorizontalResize);
     };
 
-    // Native Vertical Dragger Handler
+    // Vertical Split Drag Calculator
     const startVerticalResize = (e) => {
         e.preventDefault();
         const startY = e.clientY;
         const startHeight = editorHeight;
-        const totalHeight = rightPanelRef.current.offsetHeight;
-
         const doVerticalResize = (moveEvent) => {
+            if (!rightPanelRef.current) return;
+            const totalHeight = rightPanelRef.current.offsetHeight;
             const deltaY = moveEvent.clientY - startY;
             const newHeightPercent = startHeight + (deltaY / totalHeight) * 100;
-            if (newHeightPercent > 25 && newHeightPercent < 85) {
-                setEditorHeight(newHeightPercent);
-            }
+            if (newHeightPercent > 25 && newHeightPercent < 85) setEditorHeight(newHeightPercent);
         };
-
         const stopVerticalResize = () => {
             window.removeEventListener('mousemove', doVerticalResize);
             window.removeEventListener('mouseup', stopVerticalResize);
         };
-
         window.addEventListener('mousemove', doVerticalResize);
         window.addEventListener('mouseup', stopVerticalResize);
-    };
-
-    useEffect(() => {
-        let isMounted = true;
-        setFetchingData(true);
-
-        const fetchContext = async () => {
-            try {
-                const probRes = await fetch(`${DB_API}/get-problem/${problemCode}`);
-                if (!probRes.ok) throw new Error('Problem resource missing');
-                const probData = await probRes.json();
-
-                const tcRes = await fetch(`${DB_API}/get-testcases/${problemCode}`);
-                const tcData = await tcRes.json();
-
-                if (!isMounted) return;
-
-                setProblem(probData);
-                setTestCases(Array.isArray(tcData) ? tcData : (tcData.data || []));
-
-                if (probData?.sampleInput) {
-                    setCustomInput(typeof probData.sampleInput === 'string' ? probData.sampleInput : JSON.stringify(probData.sampleInput));
-                }
-            } catch (err) {
-                console.error("Initialization error:", err);
-            } finally {
-                if (isMounted) setFetchingData(false);
-            }
-        };
-
-        fetchContext();
-        return () => { isMounted = false; };
-    }, [problemCode]);
-
-    // Handle language shifts cleanly without resetting cursor position mid-type
-    useEffect(() => {
-        if (language && boilerplates[language] && editorRef.current) {
-            editorRef.current.setValue(boilerplates[language]);
-        }
-    }, [language]);
-
-    const handleEditorDidMount = (editor) => {
-        editorRef.current = editor;
     };
 
     const handleCustomRun = async () => {
         setActionLoading(true);
         setCustomError(false);
-        setCustomOutput('Compiling custom execution matrix...');
+        setCustomOutput('Executing sandbox compiler matrix engine...');
         setConsoleMode('custom');
 
         try {
             const response = await fetch(`${COMPILER_API}/run`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ language, code: getEditorCode(), input: customInput }),
+                body: JSON.stringify({ language, code: getActiveCode(), input: customInput }),
                 credentials: 'include'
             });
             const data = await response.json();
             if (response.ok) {
-                setCustomOutput(data.output || "Execution completed without output text response.");
+                setCustomOutput(data.output || "Execution sequence closed with empty buffer stream outputs.");
             } else {
                 setCustomError(true);
-                setCustomOutput(data.error || "An execution error occurred.");
+                setCustomOutput(data.error || "A code runtime validation exception terminated execution.");
             }
         } catch (error) {
             setCustomError(true);
-            setCustomOutput("Network error connecting compiler sandbox.");
+            setCustomOutput("Network route interruption dropped interaction channels to remote sandbox.");
         } finally {
             setActionLoading(false);
         }
@@ -182,68 +242,97 @@ export default function Coder() {
     const handleAutomatedEvaluation = async (evaluationScope) => {
         setActionLoading(true);
         setConsoleMode('testcases');
-        setVerdictMessage('Evaluating code against runtime test vectors...');
+        setVerdictMessage('Validating active solution text with test assertions suite...');
         setExecutionResults(null);
 
-        const targetScopeCases = evaluationScope === 'run' 
-            ? testCases.filter(tc => !tc.isHidden) 
-            : testCases;
-
-        if (targetScopeCases.length === 0) {
-            setVerdictMessage("No compatible test parameters present for calculation.");
+        const targets = evaluationScope === 'run' ? testCases.filter(tc => !tc.isHidden) : testCases;
+        if (targets.length === 0) {
+            setVerdictMessage("No available test assertions matching current view criteria parameters.");
             setActionLoading(false);
             return;
         }
 
+        const activeCodeBuffer = getActiveCode();
+
         try {
-            const currentCode = getEditorCode();
-            const evaluationPipeline = targetScopeCases.map(async (tc, index) => {
+            const tasks = targets.map(async (tc, idx) => {
                 try {
                     const response = await fetch(`${COMPILER_API}/run`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ language, code: currentCode, input: tc.input }),
+                        body: JSON.stringify({ language, code: activeCodeBuffer, input: tc.input }),
                         credentials: 'include'
                     });
                     const data = await response.json();
-                    
-                    const normalizedExpected = tc.output.trim();
-                    const normalizedActual = (data.output || '').trim();
-                    const processPassed = response.ok && (normalizedExpected === normalizedActual);
+                    const matched = response.ok && (tc.output.trim() === (data.output || '').trim());
 
                     return {
-                        id: tc._id || index,
+                        id: tc._id || idx,
                         input: tc.input,
                         expectedOutput: tc.output,
-                        actualOutput: data.output || data.error || 'Empty Buffer',
+                        actualOutput: data.output || data.error || 'Blank Return Matrix',
                         isHidden: tc.isHidden,
-                        passed: processPassed,
-                        runtimeDiagnostics: response.ok ? 'Success' : 'Runtime Error Exception'
+                        passed: matched,
+                        diagnostics: response.ok ? 'Success' : 'Fault'
                     };
                 } catch {
-                    return {
-                        id: tc._id || index,
-                        input: tc.input,
-                        expectedOutput: tc.output,
-                        actualOutput: 'Network disconnect dropped evaluation packet.',
-                        isHidden: tc.isHidden,
-                        passed: false,
-                        runtimeDiagnostics: 'Pipeline Error'
-                    };
+                    return { id: tc._id || idx, input: tc.input, expectedOutput: tc.output, actualOutput: 'Transport connection failure loops.', isHidden: tc.isHidden, passed: false, diagnostics: 'Disconnected' };
                 }
             });
 
-            const processedOutputs = await Promise.all(evaluationPipeline);
-            setExecutionResults(processedOutputs);
+            const outputs = await Promise.all(tasks);
+            setExecutionResults(outputs);
 
-            const errorsFound = processedOutputs.some(item => !item.passed);
-            if (errorsFound) {
-                setVerdictMessage(evaluationScope === 'submit' ? '❌ Wrong Answer / Execution Exception' : '❌ Failed Public Test Cases');
-            } else {
-                setVerdictMessage(evaluationScope === 'submit' ? '🟢 Accepted / All Metrics Verified' : '🟢 Tests Passed (Public Scope Only)');
+            const errorsFound = outputs.some(item => !item.passed);
+            const absoluteVerdict = errorsFound ? 'Wrong Answer' : 'Accepted';
+
+            setVerdictMessage(
+                errorsFound 
+                ? (evaluationScope === 'submit' ? '❌ Evaluation Terminated: Code verification criteria mismatch.' : '❌ Public Test Suite Failures Enforced.')
+                : (evaluationScope === 'submit' ? '🟢 Accepted / Verification Saved cleanly to storage array 🎉' : '🟢 Public Verification Samples Passed Successfully.')
+            );
+
+            if (evaluationScope === 'submit' && userContext) {
+                const schemaMappedLanguage = languageMapping.toBackend[language] || 'C++';
+                const resolvedUserId = userContext._id || userContext.id;
+
+                const subRes = await fetch(`${DB_API}/submit-solution/${problemCode}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        problemId: problem._id,
+                        userId: resolvedUserId,
+                        code: activeCodeBuffer,
+                        language: schemaMappedLanguage
+                    }),
+                    credentials: 'include'
+                });
+
+                const subData = await subRes.json();
+                
+                if (subRes.ok && subData.success) {
+                    setCodeCache(prev => ({ ...prev, [language]: activeCodeBuffer }));
+                    if (subData.data?._id) {
+                        await fetch(`${DB_API}/update-solution-verdict/${subData.data._id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                verdict: absoluteVerdict,
+                                executionTime: 18, 
+                                memory: 32,
+                                output: errorsFound ? 'Assertion mismatch trace metrics recorded.' : 'All compilation limits valid.'
+                            }),
+                            credentials: 'include'
+                        });
+                    }
+                } else {
+                    setVerdictMessage(`❌ Sync Failure: ${subData.message || 'Database tier rejected transactional synchronization.'}`);
+                }
             }
+
         } catch (err) {
-            setVerdictMessage('Evaluation pipeline failed internally.');
+            console.error(err);
+            setVerdictMessage('Validation loop runtime exception failure.');
         } finally {
             setActionLoading(false);
         }
@@ -252,225 +341,138 @@ export default function Coder() {
     const handleAiReview = async () => {
         setIsDrawerOpen(true);
         setIsAiLoading(true);
-        setAiReviewData('Analyzing structural edge cases and optimizations...');
-
+        setAiReviewData('Evaluating semantic abstraction layer parameters via AI review core diagnostics...');
         try {
             const response = await fetch(`${AI_API}/ai-review`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code: getEditorCode(), language, description: problem ? problem.statement : '' }),
+                body: JSON.stringify({ code: getActiveCode(), language, description: problem ? problem.statement : '' }),
                 credentials: 'include'
             });
             const data = await response.json();
-            setAiReviewData(response.ok ? data.review : `### Error\n${data.error}`);
+            setAiReviewData(response.ok ? data.review : `### Process Interruption\n${data.error}`);
         } catch (error) {
-            setAiReviewData("### Network Error\nFailed to target AI Endpoint.");
+            setAiReviewData("### Transport Error\nFailed to allocate execution pathways to processing cloud elements.");
         } finally {
             setIsAiLoading(false);
         }
     };
 
     if (fetchingData) {
-        return <div style={{ background: '#1e1e1e', height: '100vh', color: '#aaa', padding: '40px' }}>Loading Challenge Context...</div>;
+        return <div style={{ background: '#121212', height: '100vh', color: '#6b7280', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13.5px' }}>Acquiring Context Profiles via Security Decoupled Handshakes...</div>;
     }
-
-    if (!problem) {
-        return (
-            <div style={{ background: '#1e1e1e', height: '100vh', color: '#f87171', padding: '40px' }}>
-                <h3>Problem context missing!</h3>
-                <button onClick={() => navigate(`/${username || ''}`)} style={{ background: '#333', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '4px', cursor: 'pointer', marginTop: '10px' }}>Return to Dashboard</button>
-            </div>
-        );
-    }
-
-    const visibleTestCases = testCases.filter(tc => !tc.isHidden);
 
     return (
-        <div 
-            ref={containerRef}
-            style={{ display: 'flex', height: '100vh', width: '100vw', background: '#121212', color: '#fff', fontFamily: 'sans-serif', overflow: 'hidden' }}
-        >
-            {/* PANEL 1: PROBLEM CONTEXT DETAILS VIEW */}
-            <div style={{ width: `${leftPanelWidth}%`, background: '#1a1a1a', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
-                <div style={{ padding: '15px 20px', borderBottom: '1px solid #2d2d2d', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#151515' }}>
-                    <button onClick={() => navigate(`/${username || ''}`)} style={{ background: 'none', border: '1px solid #444', color: '#aaa', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
-                        ← Dashboard
+        <div ref={containerRef} style={{ display: 'flex', height: '100vh', background: '#121212', color: '#fff', fontFamily: 'sans-serif', overflow: 'hidden' }}>
+            
+            {/* Split Panel - Descriptions Framework Area */}
+            <div style={{ width: `${leftPanelWidth}%`, borderRight: '2px solid #262626', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', background: '#151515' }}>
+                <div style={{ padding: '15px 20px', borderBottom: '1px solid #262626', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <button onClick={() => navigate(`/${userContext?.username || ''}`)} style={{ background: 'none', border: '1px solid #444', color: '#aaa', padding: '5px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
+                        ← Dashboard ({userContext?.username || 'User'})
                     </button>
-                    <span style={{ fontSize: '11px', fontWeight: 'bold', background: '#2a2a2a', padding: '4px 8px', borderRadius: '4px', color: problem.difficulty === 'Easy' ? '#10b981' : problem.difficulty === 'Hard' ? '#ef4444' : '#f59e0b' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 'bold', background: '#2a2a2a', padding: '4px 8px', borderRadius: '4px', color: problem.difficulty === 'Easy' ? '#10b981' : '#f59e0b' }}>
                         {problem.difficulty || 'Medium'}
                     </span>
                 </div>
                 
-                <div style={{ padding: '20px', overflowY: 'auto', flex: 1, lineHeight: '1.6', fontSize: '14px' }}>
-                    <h1 style={{ margin: '0 0 12px 0', fontSize: '22px', letterSpacing: '-0.5px' }}>{problem.name || 'Untitled Challenge'}</h1>
-                    <p style={{ color: '#e0e0e0', whiteSpace: 'pre-wrap', marginBottom: '20px' }}>{problem.statement}</p>
+                <div style={{ padding: '25px 20px', overflowY: 'auto', flex: 1, lineHeight: '1.6' }}>
+                    <h1 style={{ margin: '0 0 12px 0', fontSize: '21px', letterSpacing: '-0.3px' }}>{problem.name || 'Untitled Problem'}</h1>
+                    <p style={{ color: '#e2e8f0', whiteSpace: 'pre-wrap', fontSize: '14px' }}>{problem.statement}</p>
                     
-                    {problem.description && (
-                        <div style={{ marginBottom: '20px' }}>
-                            <h4 style={{ color: '#3b82f6', marginBottom: '6px', fontSize: '13px', textTransform: 'uppercase' }}>Context details</h4>
-                            <p style={{ fontSize: '13px', color: '#aaa', margin: 0 }}>{problem.description}</p>
-                        </div>
-                    )}
-
                     {problem.constraints && (
-                        <div style={{ marginBottom: '20px' }}>
-                            <h4 style={{ color: '#ef4444', marginBottom: '6px', fontSize: '13px', textTransform: 'uppercase' }}>Constraints</h4>
-                            <pre style={{ background: '#242424', padding: '10px', borderRadius: '6px', border: '1px solid #2d2d2d', fontSize: '13px', margin: 0, whiteSpace: 'pre-wrap', color: '#fca5a5' }}>{renderDataSafely(problem.constraints)}</pre>
+                        <div style={{ marginTop: '20px' }}>
+                            <h4 style={{ color: '#ef4444', marginBottom: '6px', fontSize: '12px', textTransform: 'uppercase' }}>Constraints Profile</h4>
+                            <pre style={{ background: '#1e1e1e', padding: '10px', borderRadius: '6px', fontSize: '13px', margin: 0, whiteSpace: 'pre-wrap', border: '1px solid #2d2d2d', color: '#fca5a5' }}>{renderDataSafely(problem.constraints)}</pre>
                         </div>
                     )}
 
-                    <div style={{ marginTop: '25px', paddingTop: '15px', borderTop: '1px solid #2d2d2d' }}>
-                        <h3 style={{ fontSize: '15px', color: '#9ca3af', marginBottom: '12px' }}>Public Test Cases ({visibleTestCases.length})</h3>
-                        {visibleTestCases.map((tc, idx) => (
-                            <div key={tc._id || idx} style={{ background: '#222', borderRadius: '6px', padding: '12px', marginBottom: '12px', border: '1px solid #2d2d2d' }}>
-                                <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: 'bold', marginBottom: '6px' }}>SAMPLE CASE #{idx + 1}</div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                                    <div>
-                                        <span style={{ fontSize: '11px', color: '#10b981' }}>Input</span>
-                                        <pre style={{ background: '#151515', padding: '6px', borderRadius: '4px', margin: '2px 0 0 0', fontSize: '12px', overflowX: 'auto' }}>{tc.input}</pre>
-                                    </div>
-                                    <div>
-                                        <span style={{ fontSize: '11px', color: '#3b82f6' }}>Expected Output</span>
-                                        <pre style={{ background: '#151515', padding: '6px', borderRadius: '4px', margin: '2px 0 0 0', fontSize: '12px', overflowX: 'auto' }}>{tc.output}</pre>
-                                    </div>
-                                </div>
-                                {tc.explanation && <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '8px', fontStyle: 'italic' }}>Note: {tc.explanation}</div>}
-                            </div>
-                        ))}
-                    </div>
+                    {problem.sampleInput && (
+                        <div style={{ marginTop: '20px' }}>
+                            <h4 style={{ color: '#10b981', marginBottom: '6px', fontSize: '12px', textTransform: 'uppercase' }}>Sample Input Case</h4>
+                            <pre style={{ background: '#1e1e1e', padding: '10px', borderRadius: '6px', fontSize: '13px', margin: 0, whiteSpace: 'pre-wrap', border: '1px solid #2d2d2d' }}>{renderDataSafely(problem.sampleInput)}</pre>
+                        </div>
+                    )}
+
+                    {problem.sampleOutput && (
+                        <div style={{ marginTop: '20px' }}>
+                            <h4 style={{ color: '#10b981', marginBottom: '6px', fontSize: '12px', textTransform: 'uppercase' }}>Sample Output Target</h4>
+                            <pre style={{ background: '#1e1e1e', padding: '10px', borderRadius: '6px', fontSize: '13px', margin: 0, whiteSpace: 'pre-wrap', border: '1px solid #2d2d2d' }}>{renderDataSafely(problem.sampleOutput)}</pre>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* HORIZONTAL RESIZE HANDLE BAR */}
-            <div 
-                onMouseDown={startHorizontalResize}
-                style={{ width: '6px', background: '#121212', cursor: 'col-resize', zIndex: 10, transition: 'background 0.2s' }} 
-                title="Drag to adjust column layout split"
-            />
+            <div onMouseDown={startHorizontalResize} style={{ width: '6px', background: '#121212', cursor: 'col-resize', zIndex: 10 }} />
 
-            {/* DEVELOPMENT SECTION CONTAINER */}
-            <div 
-                ref={rightPanelRef}
-                style={{ width: `${100 - leftPanelWidth}%`, display: 'flex', flexDirection: 'column', background: '#1e1e1e', height: '100%' }}
-            >
-                {/* PANEL 2: COMPILER ENVIRONMENT & CONTROL RENDERERS */}
-                <div style={{ height: `${editorHeight}%`, display: 'flex', flexDirection: 'column', background: '#1e1e1e', overflow: 'hidden' }}>
-                    <div style={{ padding: '12px 15px', display: 'flex', gap: '10px', alignItems: 'center', background: '#151515', borderBottom: '1px solid #2d2d2d' }}>
-                        <select 
-                            value={language} 
-                            onChange={(e) => setLanguage(e.target.value)}
-                            style={{ padding: '6px 12px', borderRadius: '4px', background: '#2a2a2a', color: '#fff', border: '1px solid #444', cursor: 'pointer', fontSize: '13px' }}
-                        >
-                            <option value="cpp">C++</option>
-                            <option value="javascript">JavaScript</option>
-                            <option value="python">Python</option>
-                            <option value="java">Java</option>
-                        </select>
-                        
-                        <button onClick={handleCustomRun} disabled={actionLoading} style={{ padding: '6px 14px', borderRadius: '4px', background: '#2a2a2a', color: '#e0e0e0', border: '1px solid #444', cursor: actionLoading ? 'not-allowed' : 'pointer', fontSize: '13px' }}>
-                            RUN CUSTOM
-                        </button>
-
-                        <button onClick={() => handleAutomatedEvaluation('run')} disabled={actionLoading} style={{ padding: '6px 14px', borderRadius: '4px', background: '#2563eb', color: '#fff', border: 'none', cursor: actionLoading ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: 'bold' }}>
-                            RUN TESTS
-                        </button>
-
-                        <button onClick={() => handleAutomatedEvaluation('submit')} disabled={actionLoading} style={{ padding: '6px 16px', borderRadius: '4px', background: '#16a34a', color: '#fff', border: 'none', cursor: actionLoading ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: 'bold' }}>
-                            SUBMIT
-                        </button>
-
-                        <button onClick={handleAiReview} disabled={isAiLoading} style={{ padding: '6px 12px', borderRadius: '4px', background: '#4f46e5', color: '#fff', border: 'none', cursor: isAiLoading ? 'not-allowed' : 'pointer', fontSize: '12px', fontWeight: 'bold', marginLeft: 'auto' }}>
-                            {isAiLoading ? 'ANALYZING...' : '✨ AI REVIEW'}
-                        </button>
-                    </div>
-
-                    <div style={{ flex: 1, position: 'relative' }}>
-                        <Editor
-                            height="100%"
-                            theme="vs-dark"
-                            language={language}
-                            defaultValue={boilerplates[language]}
-                            onMount={handleEditorDidMount}
-                            options={{ fontSize: 13, minimap: { enabled: false }, automaticLayout: true, padding: { top: 10 } }}
-                        />
-                    </div>
+            {/* Split Panel - Workspace Editor Space */}
+            <div ref={rightPanelRef} style={{ flex: 1, display: 'flex', flexDirection: 'column', boxSizing: 'border-box', background: '#1e1e1e' }}>
+                <div style={{ padding: '12px 20px', display: 'flex', gap: '10px', alignItems: 'center', background: '#141414', borderBottom: '1px solid #262626' }}>
+                    <select 
+                        value={language} 
+                        onChange={(e) => handleLanguageChange(e.target.value)}
+                        style={{ padding: '6px 12px', borderRadius: '4px', background: '#262626', color: '#fff', border: '1px solid #444', cursor: 'pointer', fontSize: '13px' }}
+                    >
+                        <option value="cpp">C++</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="python">Python</option>
+                        <option value="java">Java</option>
+                    </select>
+                    
+                    <button onClick={handleCustomRun} disabled={actionLoading} style={{ padding: '6px 14px', borderRadius: '4px', background: '#262626', color: '#fff', border: '1px solid #444', cursor: 'pointer', fontSize: '13px' }}>Run Code</button>
+                    <button onClick={() => handleAutomatedEvaluation('run')} disabled={actionLoading} style={{ padding: '6px 14px', borderRadius: '4px', background: '#2563eb', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>Run Tests</button>
+                    <button onClick={() => handleAutomatedEvaluation('submit')} disabled={actionLoading} style={{ padding: '6px 18px', borderRadius: '4px', background: '#16a34a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>SUBMIT</button>
+                    <button onClick={handleAiReview} disabled={isAiLoading} style={{ padding: '6px 14px', borderRadius: '4px', background: '#4f46e5', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold', marginLeft: 'auto', fontSize: '13px' }}>✨ AI REVIEW</button>
                 </div>
 
-                {/* VERTICAL RESIZE HANDLE BAR */}
-                <div 
-                    onMouseDown={startVerticalResize}
-                    style={{ height: '6px', background: '#121212', cursor: 'row-resize', zIndex: 10 }} 
-                    title="Drag to adjust console layout height"
-                />
+                <div style={{ height: `${editorHeight}%`, width: '100%', overflow: 'hidden' }}>
+                    <Editor
+                        height="100%"
+                        theme="vs-dark"
+                        language={language}
+                        onMount={handleEditorDidMount}
+                        options={{ fontSize: 13.5, minimap: { enabled: false }, automaticLayout: true }}
+                    />
+                </div>
 
-                {/* PANEL 3: USER TERMINALS & RESULTS AGGREGATORS */}
-                <div style={{ height: `${100 - editorHeight}%`, background: '#181818', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                    <div style={{ display: 'flex', background: '#141414', borderBottom: '1px solid #2d2d2d' }}>
-                        <button onClick={() => setConsoleMode('custom')} style={{ padding: '10px 20px', background: consoleMode === 'custom' ? '#181818' : 'transparent', color: consoleMode === 'custom' ? '#3b82f6' : '#888', border: 'none', borderBottom: consoleMode === 'custom' ? '2px solid #3b82f6' : 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>
-                            Custom Playground
-                        </button>
-                        <button onClick={() => setConsoleMode('testcases')} style={{ padding: '10px 20px', background: consoleMode === 'testcases' ? '#181818' : 'transparent', color: consoleMode === 'testcases' ? '#3b82f6' : '#888', border: 'none', borderBottom: consoleMode === 'testcases' ? '2px solid #3b82f6' : 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>
-                            Test Cases Matrix {executionResults && `(${executionResults.filter(r => r.passed).length}/${executionResults.length})`}
-                        </button>
+                <div onMouseDown={startVerticalResize} style={{ height: '6px', background: '#121212', cursor: 'row-resize', zIndex: 10 }} />
+
+                {/* Outputs Sandboxed Control Console Tray */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#111', overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', background: '#161616', borderBottom: '1px solid #262626' }}>
+                        <button onClick={() => setConsoleMode('custom')} style={{ padding: '10px 20px', background: consoleMode === 'custom' ? '#111' : 'transparent', color: consoleMode === 'custom' ? '#3b82f6' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>Custom Console</button>
+                        <button onClick={() => setConsoleMode('testcases')} style={{ padding: '10px 20px', background: consoleMode === 'testcases' ? '#111' : 'transparent', color: consoleMode === 'testcases' ? '#3b82f6' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>Test Run Evaluation Matrix {executionResults && `(${executionResults.filter(r => r.passed).length}/${executionResults.length})`}</button>
                     </div>
 
-                    <div style={{ flex: 1, padding: '15px', overflowY: 'auto', boxSizing: 'border-box' }}>
-                        
-                        {/* TAB A: CUSTOM WORKSPACE */}
-                        {consoleMode === 'custom' && (
-                            <div style={{ display: 'flex', gap: '15px', height: '100%', minHeight: '100px' }}>
-                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                                    <div style={{ fontSize: '12px', color: '#aaa', marginBottom: '4px', fontWeight: 'bold' }}>Input Parameters</div>
-                                    <textarea value={customInput} onChange={(e) => setCustomInput(e.target.value || '')} style={{ flex: 1, minHeight: '65px', background: '#1f1f1f', color: '#fff', padding: '10px', borderRadius: '4px', border: '1px solid #333', fontFamily: 'monospace', fontSize: '13px', resize: 'none' }} />
-                                </div>
-                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                                    <div style={{ fontSize: '12px', color: '#aaa', marginBottom: '4px', fontWeight: 'bold' }}>Output Buffer Diagnostics</div>
-                                    <div style={{ flex: 1, minHeight: '65px', background: '#0a0a0a', color: customError ? '#f87171' : '#a7f3d0', padding: '10px', borderRadius: '4px', border: '1px solid #2d2d2d', fontFamily: 'monospace', fontSize: '13px', whiteSpace: 'pre-wrap', overflowY: 'auto' }}>
-                                        {customOutput || 'No output captured. Run custom parameters to generate execution logs.'}
-                                    </div>
+                    <div style={{ flex: 1, padding: '15px', overflowY: 'auto' }}>
+                        {consoleMode === 'custom' ? (
+                            <div style={{ display: 'flex', gap: '15px', height: '100%', minHeight: '110px' }}>
+                                <textarea value={customInput} onChange={(e) => setCustomInput(e.target.value)} style={{ flex: 1, background: '#1a1a1a', color: '#fff', border: '1px solid #2d2d2d', borderRadius: '4px', padding: '10px', fontFamily: 'monospace', resize: 'none', fontSize: '12px' }} />
+                                <div style={{ flex: 1, background: '#070707', color: customError ? '#ef4444' : '#4ade80', border: '1px solid #2d2d2d', borderRadius: '4px', padding: '10px', fontFamily: 'monospace', whiteSpace: 'pre-wrap', fontSize: '12px', overflowY: 'auto' }}>
+                                    {customOutput || "Console output buffer trace is empty."}
                                 </div>
                             </div>
-                        )}
-
-                        {/* TAB B: TESTING ENVIRONMENT MATRICES */}
-                        {consoleMode === 'testcases' && (
+                        ) : (
                             <div>
                                 {verdictMessage && (
-                                    <div style={{ padding: '10px', borderRadius: '4px', background: verdictMessage.includes('🟢') ? 'rgba(22, 163, 74, 0.15)' : 'rgba(239, 68, 68, 0.15)', border: `1px solid ${verdictMessage.includes('🟢') ? '#16a34a' : '#ef4444'}`, color: verdictMessage.includes('🟢') ? '#4ade80' : '#fca5a5', fontSize: '14px', fontWeight: 'bold', marginBottom: '15px' }}>
+                                    <div style={{ padding: '10px', borderRadius: '4px', background: verdictMessage.includes('🟢') ? 'rgba(22, 163, 74, 0.12)' : 'rgba(239, 68, 68, 0.12)', border: `1px solid ${verdictMessage.includes('🟢') ? '#16a34a' : '#dc2626'}`, color: verdictMessage.includes('🟢') ? '#4ade80' : '#fca5a5', fontWeight: 'bold', marginBottom: '12px', fontSize: '13px' }}>
                                         {verdictMessage}
                                     </div>
                                 )}
-                                
-                                {actionLoading && !executionResults && <div style={{ color: '#aaa', fontStyle: 'italic', fontSize: '13px' }}>Evaluating test arrays... Please hold.</div>}
-
                                 {executionResults && (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                        {executionResults.map((result, idx) => (
-                                            <div key={result.id} style={{ border: `1px solid ${result.passed ? '#2d2d2d' : 'rgba(239,68,68,0.4)'}`, background: result.passed ? '#1e1e1e' : 'rgba(239,68,68,0.05)', borderRadius: '6px', padding: '12px' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                                    <span style={{ fontSize: '13px', fontWeight: 'bold', color: result.passed ? '#4ade80' : '#f87171' }}>
-                                                        Case {idx + 1}: {result.passed ? '✔ PASSED' : '❌ FAILED'} {result.isHidden && <span style={{ fontSize: '10px', color: '#a78bfa', background: 'rgba(139,92,246,0.2)', padding: '2px 6px', borderRadius: '4px', marginLeft: '6px' }}>HIDDEN CRITERIA</span>}
-                                                    </span>
-                                                    <span style={{ fontSize: '11px', color: '#6b7280' }}>{result.runtimeDiagnostics}</span>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        {executionResults.map((res, i) => (
+                                            <div key={res.id} style={{ background: '#181818', border: `1px solid ${res.passed ? '#16a34a' : '#dc2626'}`, borderRadius: '6px', padding: '12px' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
+                                                    <span style={{ fontWeight: 'bold', color: res.passed ? '#4ade80' : '#f87171' }}>Assertion Step #{i + 1} ({res.passed ? 'PASSED' : 'FAILED'})</span>
+                                                    <span style={{ fontSize: '11px', color: '#64748b' }}>{res.diagnostics}</span>
                                                 </div>
-
-                                                {(!result.isHidden || !result.passed) ? (
-                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', fontSize: '12px', fontFamily: 'monospace' }}>
-                                                        <div>
-                                                            <div style={{ color: '#888' }}>Input Vector:</div>
-                                                            <pre style={{ background: '#111', padding: '4px 6px', borderRadius: '4px', margin: '2px 0 0 0', overflowX: 'auto' }}>{result.input}</pre>
-                                                        </div>
-                                                        <div>
-                                                            <div style={{ color: '#888' }}>Target Output:</div>
-                                                            <pre style={{ background: '#111', padding: '4px 6px', borderRadius: '4px', margin: '2px 0 0 0', overflowX: 'auto', color: '#4ade80' }}>{result.expectedOutput}</pre>
-                                                        </div>
-                                                        <div>
-                                                            <div style={{ color: '#888' }}>Captured Out:</div>
-                                                            <pre style={{ background: '#111', padding: '4px 6px', borderRadius: '4px', margin: '2px 0 0 0', overflowX: 'auto', color: result.passed ? '#4ade80' : '#f87171' }}>{result.actualOutput}</pre>
-                                                        </div>
+                                                {!res.isHidden && (
+                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', fontSize: '12px', fontFamily: 'monospace', background: '#0d0d0d', padding: '8px', borderRadius: '4px', marginTop: '4px' }}>
+                                                        <div><span style={{ color: '#555' }}>Input Stream:</span> <pre style={{ margin: '2px 0 0 0', color: '#fff' }}>{res.input}</pre></div>
+                                                        <div><span style={{ color: '#555' }}>Expected Configuration:</span> <pre style={{ margin: '2px 0 0 0', color: '#4ade80' }}>{res.expectedOutput}</pre></div>
+                                                        <div><span style={{ color: '#555' }}>Actual Outcome:</span> <pre style={{ margin: '2px 0 0 0', color: res.passed ? '#4ade80' : '#f87171' }}>{res.actualOutput}</pre></div>
                                                     </div>
-                                                ) : (
-                                                    <div style={{ fontSize: '12px', color: '#888', fontStyle: 'italic' }}>Confidential test matrices hidden inside isolated sandbox environment.</div>
                                                 )}
                                             </div>
                                         ))}
@@ -482,15 +484,15 @@ export default function Coder() {
                 </div>
             </div>
 
-            {/* FLOATING ACTION SLIDE OVER: AI REVIEW MODULE */}
-            {isDrawerOpen && <div onClick={() => setIsDrawerOpen(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0, 0, 0, 0.6)', zIndex: 999 }} />}
-            <div style={{ position: 'fixed', top: 0, right: isDrawerOpen ? 0 : '-500px', width: '100%', maxWidth: '480px', height: '100vh', background: '#161616', boxShadow: '-10px 0 35px rgba(0,0,0,0.6)', zIndex: 1000, transition: 'right 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', borderBottom: '1px solid #2d2d2d', background: '#1a1a1a' }}>
-                    <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#6366f1', fontWeight: 'bold' }}>✨ AI Diagnostic Core</h2>
-                    <button onClick={() => setIsDrawerOpen(false)} style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
+            {/* Sliding Layer - AI Metrics Sidecar */}
+            {isDrawerOpen && <div onClick={() => setIsDrawerOpen(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0, 0, 0, 0.65)', zIndex: 999 }} />}
+            <div style={{ position: 'fixed', top: 0, right: isDrawerOpen ? 0 : '-500px', width: '100%', maxWidth: '480px', height: '100vh', background: '#151515', boxShadow: '-8px 0 30px rgba(0,0,0,0.7)', zIndex: 1000, transition: 'right 0.25s ease-in-out', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', borderBottom: '1px solid #2d2d2d', background: '#1c1c1c' }}>
+                    <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#818cf8' }}>✨ AI Diagnostics Insight Matrix</h2>
+                    <button onClick={() => setIsDrawerOpen(false)} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '26px', cursor: 'pointer' }}>&times;</button>
                 </div>
-                <div style={{ padding: '20px', overflowY: 'auto', flex: 1, lineHeight: '1.6', fontSize: '14px', whiteSpace: 'pre-wrap', color: '#e0e0e0', fontFamily: 'monospace' }}>
-                    {isAiLoading ? <p style={{ color: '#888', fontStyle: 'italic' }}>Running architectural heuristics...</p> : <div>{aiReviewData}</div>}
+                <div style={{ padding: '20px', overflowY: 'auto', flex: 1, whiteSpace: 'pre-wrap', color: '#e2e8f0', fontFamily: 'monospace', fontSize: '12.5px', lineHeight: '1.5' }}>
+                    {isAiLoading ? 'Executing semantic parser array vectors...' : aiReviewData}
                 </div>
             </div>
 

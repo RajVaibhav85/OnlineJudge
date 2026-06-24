@@ -9,7 +9,9 @@ const s = {
   page: { minHeight: '100vh', background: '#f5f5f5', fontFamily: 'system-ui, sans-serif' },
   nav: { background: '#fff', borderBottom: '0.5px solid #e0e0e0', padding: '0 2rem', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
   navTitle: { fontSize: '16px', fontWeight: '500', color: '#111', margin: 0 },
+  navActions: { display: 'flex', alignItems: 'center', gap: '8px' },
   logoutBtn: { background: 'none', border: '1px solid #ddd', borderRadius: '8px', padding: '6px 14px', fontSize: '13px', cursor: 'pointer', color: '#555' },
+  adminBtn: { background: '#dc2626', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 14px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' },
   main: { maxWidth: '1000px', margin: '0 auto', padding: '2rem 1rem' },
   welcome: { fontSize: '22px', fontWeight: '500', color: '#111', margin: '0 0 0.25rem' },
   welcomeSub: { fontSize: '14px', color: '#888', margin: '0 0 2rem' },
@@ -48,7 +50,7 @@ export default function Dashboard() {
   }, [user, loading, navigate])
 
   useEffect(() => {
-    if (user && username !== user.username) {
+    if (user && username && username !== user.username) {
         navigate(`/${user.username}`, { replace: true })
     }
   }, [user, username, navigate])
@@ -72,7 +74,7 @@ export default function Dashboard() {
         return res.json();
       })
       .then(resData => {
-        if (resData.success) setProblems(resData.data)
+        if (resData.success) setProblems(resData.data || [])
         setIsFetching(false)
       })
       .catch(err => {
@@ -104,18 +106,27 @@ export default function Dashboard() {
     <div style={s.page}>
       <nav style={s.nav}>
         <p style={s.navTitle}>Online Judge Dashboard</p>
-        <button style={{ ...s.logoutBtn, background: '#111', color: '#fff', border: 'none' }} onClick={() => navigate(`/${user.username}/profile`)}>Profile</button>
-        <button style={s.logoutBtn} onClick={async () => { await logout(); navigate('/auth') }}>Logout</button>
+        
+        <div style={s.navActions}>
+          {user.role === 'admin' && (
+            <button style={s.adminBtn} onClick={() => navigate(`/${user.username}/admin`)}>
+              Admin Panel
+            </button>
+          )}
+          
+          <button style={{ ...s.logoutBtn, background: '#111', color: '#fff', border: 'none' }} onClick={() => navigate(`/${user.username}/profile`)}>Profile</button>
+          <button style={s.logoutBtn} onClick={async () => { await logout(); navigate('/auth') }}>Logout</button>
+        </div>
       </nav>
 
       <main style={s.main}>
         <h1 style={s.welcome}>Welcome back, {user.username} 👋</h1>
         <p style={s.welcomeSub}>Manage workspace filters or choose a problem below to open the code editor.</p>
 
+        {/* Filters Structure Panel */}
         <div style={s.card}>
           <p style={s.cardTitle}>🎛️ Filter Challenges</p>
           <div style={s.filterBar}>
-            
             <input 
               style={s.input} 
               type="text" 
@@ -151,15 +162,8 @@ export default function Dashboard() {
                         key={tag} 
                         style={{ ...s.dropdownItem, background: isChecked ? '#f0f7ff' : 'transparent' }} 
                         onClick={() => handleTagToggle(tag)}
-                        onMouseEnter={e => e.currentTarget.style.backgroundColor = isChecked ? '#e0f0ff' : '#f5f5f5'}
-                        onMouseLeave={e => e.currentTarget.style.backgroundColor = isChecked ? '#f0f7ff' : 'transparent'}
                       >
-                        <input 
-                          type="checkbox" 
-                          checked={isChecked} 
-                          onChange={() => {}} 
-                          style={{ cursor: 'pointer' }}
-                        />
+                        <input type="checkbox" checked={isChecked} onChange={() => {}} style={{ cursor: 'pointer' }} />
                         <span>{tag}</span>
                       </div>
                     );
@@ -167,10 +171,10 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-
           </div>
         </div>
 
+        {/* Problem Matrix Mapping Grid */}
         <div style={s.card}>
           <p style={s.cardTitle}>⚡ Challenges ({problems.length})</p>
           <div>

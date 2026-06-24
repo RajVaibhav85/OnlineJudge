@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard/Dashboard'
 import Coder from './pages/Coder/Coder'
 import ProtectedRoute from './components/ProtectedRoute'
 import ProfilePage from "./pages/Profile/Profile";
+import AdminPanel from "./pages/Dashboard/AdminPanel"; // Adjust path to your AdminPanel component file
 
 function App() {
   return (
@@ -28,6 +29,17 @@ function App() {
               </ProtectedRoute>
             } 
           />
+
+          {/* CRITICAL: Must be placed ABOVE /:username/:code to avoid code parameter shadowing */}
+          <Route 
+            path="/:username/admin" 
+            element={
+              <ProtectedRoute>
+                <AdminPanel />
+              </ProtectedRoute>
+            } 
+          />
+
           <Route 
             path="/:username/:code" 
             element={

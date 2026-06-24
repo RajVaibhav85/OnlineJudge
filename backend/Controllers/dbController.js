@@ -1,6 +1,7 @@
 const Problem = require('../Models/Problems');
 const TestCase = require('../Models/TestCases');
-
+const Solution = require('../Models/Solutions');
+const Profile = require('../Models/Profile');
 
 const insertProblem = async (req, res) => {
     try {
@@ -228,6 +229,204 @@ const getTestCases = async (req, res) => {
   }
 }
 
+const updateTestCase = async (req, res) => {
+  try {
+    const { id } = req.params; // Expects testcase ID in the route parameters
+    const updateData = req.body;
+
+    // Prevent shifting the testcase to another problem via update
+    if (updateData.problem) {
+      delete updateData.problem;
+    }
+
+    const updatedTestCase = await TestCase.findByIdAndUpdate(
+      id,
+      updateData,
+      { 
+        new: true,
+        runValidators: true 
+      }
+    );
+
+    if (!updatedTestCase) {
+      return res.status(404).json({
+        success: false,
+        message: "Test case could not be located."
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Test case parameters updated successfully.",
+      data: updatedTestCase
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "An internal error occurred while updating the test case: " + error.message
+    });
+  }
+};
+
+const deleteTestCase = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deletedTestCase = await TestCase.findByIdAndDelete(id);
+
+    if (!deletedTestCase) {
+      return res.status(404).json({
+        success: false,
+        message: "Test case does not exist."
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Test case successfully purged from the system core."
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed execution parameters during test case teardown: " + error.message
+    });
+  }
+};
+
+
+const submitSolution = async (req, res) => {
+    try {
+        const { problemId, userId, code, language } = req.body;
+
+        if (!problemId || !userId || !code || !language) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Missing required tracking attributes: problemId, userId, code, and language are all required." 
+            });
+        }
+
+        // Use findOneAndUpdate with upsert: true to replace or create records dynamically
+        const solution = await Solution.findOneAndUpdate(
+            { 
+                user: userId, 
+                problem: problemId, 
+                language: language 
+            }, // Unique selection constraint matching criteria
+            { 
+                code: code,
+                verdict: 'Pending', // Reset verdict status during the compilation sequence pipeline
+                submittedAt: new Date()
+            }, 
+            { 
+                upsert: true, 
+                returnDocument: 'after', // Avoids deprecation warnings instead of using 'new: true'
+                runValidators: true 
+            }
+        );
+
+        return res.status(200).json({ 
+            success: true, 
+            message: "Solution synchronized successfully", 
+            data: solution 
+        });
+
+    } catch (err) {
+        console.error("Error synchronizing tracking solution parameters:", err);
+        return res.status(500).json({ 
+            success: false, 
+            error: "Server Error: Failed to process runtime workspace update matrix" 
+        });
+    }
+};
+
+const updateSolutionVerdict = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { verdict, executionTime, memory, output } = req.body;
+
+        // 1. Update the solution document
+        const updatedSolution = await Solution.findByIdAndUpdate(
+            id,
+            { $set: { verdict, executionTime, memory, output } },
+            { new: true }
+        );
+
+        if (!updatedSolution) {
+            return res.status(404).json({ success: false, message: "Solution record not found." });
+        }
+
+        // 2. If solution is accepted, update user profile statistics
+        if (verdict === 'Accepted') {
+            const problemData = await Problem.findById(updatedSolution.problem);
+            if (problemData) {
+                const problemSlug = problemData.code; // problem slug (e.g., 'two-sum')
+                const difficultyField = `stats.difficultyBreakdown.${(problemData.difficulty || 'Medium').toLowerCase()}`;
+
+                // Locate profile or insert baseline row atomically
+                const userProfile = await Profile.findOne({ user: updatedSolution.user });
+                
+                if (userProfile) {
+                    // Check if problem slug has already been solved to prevent double-counting metrics
+                    const alreadySolved = userProfile.stats?.solvedProblemsList?.includes(problemSlug);
+
+                    if (!alreadySolved) {
+                        await Profile.findOneAndUpdate(
+                            { user: updatedSolution.user },
+                            {
+                                $addToSet: { 'stats.solvedProblemsList': problemSlug },
+                                $inc: { 
+                                    'stats.problemsSolved': 1,
+                                    [difficultyField]: 1 
+                                }
+                            }
+                        );
+                    }
+                } else {
+                    // Initialize clean baseline if document record doesn't exist yet
+                    await Profile.create({
+                        user: updatedSolution.user,
+                        stats: {
+                            problemsSolved: 1,
+                            difficultyBreakdown: {
+                                easy: problemData.difficulty === 'Easy' ? 1 : 0,
+                                medium: problemData.difficulty === 'Medium' ? 1 : 0,
+                                hard: problemData.difficulty === 'Hard' ? 1 : 0
+                            },
+                            solvedProblemsList: [problemSlug]
+                        }
+                    });
+                }
+            }
+        }
+
+        return res.status(200).json({ success: true, data: updatedSolution });
+    } catch (err) {
+        console.error("Verdict tracking exception sync failure:", err);
+        return res.status(500).json({ success: false, error: "Internal Server Verification Error" });
+    }
+};
+
+// --- NEW READ CONTROLLER FOR FETCHING CODE ON LOAD ---
+const getLatestSubmission = async (req, res) => {
+  try {
+    const { userId, problemId } = req.params;
+
+    // Fetch the most recent submission document matching user and problem
+    const latest = await Solution.findOne({ user: userId, problem: problemId })
+                                 .sort({ createdAt: -1 });
+
+    if (!latest) {
+      return res.status(200).json({ success: false, message: "No previous attempts found." });
+    }
+
+    return res.status(200).json({ success: true, data: latest });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Error fetching previous entry: " + error.message });
+  }
+};
+
 module.exports = {
     insertProblem,
     getProblems,
@@ -235,8 +434,13 @@ module.exports = {
     updateProblem,
     deleteProblem,
     insertTestCases,
-    getTestCases
-}
+    getTestCases,
+    updateTestCase,
+    deleteTestCase,
+    submitSolution,
+    updateSolutionVerdict,
+    getLatestSubmission // Exported here
+};
 
 // ### INSERT PROBLEM
 
