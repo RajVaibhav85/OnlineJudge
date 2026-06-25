@@ -11,6 +11,12 @@ const solutionSchema = new mongoose.Schema({
     ref: 'User',
     required: [true, "User reference is required"]
   },
+  // Added conditional reference to tracking suite
+  testHub: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'TestHub',
+    default: null
+  },
   code: {
     type: String,
     required: [true, "Solution code is required"],
@@ -19,8 +25,8 @@ const solutionSchema = new mongoose.Schema({
   language: {
     type: String,
     enum: {
-      values: ['JavaScript', 'Python', 'Java', 'C++', 'C', 'Ruby', 'Go', 'Rust'],
-      message: "Language must be one of: JavaScript, Python, Java, C++, C, Ruby, Go, Rust"
+      values: ['JavaScript', 'Python', 'Java', 'C++', 'C', 'Ruby', 'Go', 'Rust', 'cpp', 'javascript', 'python', 'java'],
+      message: "Language verification parameter exception matches standard types"
     },
     required: [true, "Programming language is required"]
   },
@@ -32,32 +38,16 @@ const solutionSchema = new mongoose.Schema({
     },
     default: 'Pending'
   },
-  executionTime: {
-    type: Number,
-    default: null
-  },
-  memory: {
-    type: Number,
-    default: null
-  },
-  output: {
-    type: String,
-    trim: true
-  },
-  error: {
-    type: String,
-    trim: true
-  },
-  submittedAt: {
-    type: Date,
-    default: Date.now
-  }
+  executionTime: { type: Number, default: null },
+  memory: { type: Number, default: null },
+  output: { type: String, trim: true },
+  error: { type: String, trim: true },
+  submittedAt: { type: Date, default: Date.now }
 }, { timestamps: true });
 
-// Index for faster queries
 solutionSchema.index({ problem: 1, user: 1 });
+solutionSchema.index({ testHub: 1 }); // Performance index for quick session-based wipes
 solutionSchema.index({ submittedAt: -1 });
 
 const Solution = mongoose.model('Solution', solutionSchema);
-
 module.exports = Solution;
