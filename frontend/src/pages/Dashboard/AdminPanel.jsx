@@ -9,16 +9,16 @@ const AVAILABLE_TAGS = ['Array', 'String', 'Hash Table', 'Dynamic Programming', 
 const s = {
   page: { 
     minHeight: '100vh', 
-    background: 'radial-gradient(circle at 50% 0%, #111827 0%, #030712 100%)', 
+    background: 'linear-gradient(160deg, #0a0518 0%, #1b1033 45%, #2a1854 75%, #120a26 100%)', 
     fontFamily: 'Inter, system-ui, -apple-system, sans-serif', 
-    color: '#f3f4f6',
+    color: '#f3f0ff',
     letterSpacing: '-0.01em'
   },
   nav: { 
-    background: 'rgba(17, 24, 39, 0.65)', 
+    background: 'rgba(18, 10, 36, 0.55)', 
     backdropFilter: 'blur(16px)',
     WebkitBackdropFilter: 'blur(16px)',
-    borderBottom: '1px solid rgba(255, 255, 255, 0.06)', 
+    borderBottom: '1px solid rgba(167, 139, 250, 0.1)', 
     padding: '0 2.5rem', 
     height: '70px', 
     display: 'flex', 
@@ -31,7 +31,7 @@ const s = {
   navTitle: { 
     fontSize: '16px', 
     fontWeight: '600', 
-    color: '#f9fafb', 
+    color: '#f3f0ff', 
     margin: 0, 
     display: 'flex', 
     alignItems: 'center', 
@@ -39,8 +39,8 @@ const s = {
     letterSpacing: '-0.02em'
   },
   btn: { 
-    background: 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)', 
-    color: '#030712', 
+    background: 'linear-gradient(135deg, #a78bfa 0%, #6366f1 100%)', 
+    color: '#0a0518', 
     border: 'none', 
     borderRadius: '8px', 
     padding: '10px 20px', 
@@ -51,12 +51,12 @@ const s = {
     display: 'inline-flex', 
     alignItems: 'center', 
     justifyContent: 'center',
-    boxShadow: '0 4px 14px 0 rgba(56, 189, 248, 0.3)'
+    boxShadow: '0 4px 14px 0 rgba(167, 139, 250, 0.3)'
   },
   btnSecondary: { 
-    background: 'rgba(255, 255, 255, 0.04)', 
-    border: '1px solid rgba(255, 255, 255, 0.08)', 
-    color: '#e5e7eb', 
+    background: 'rgba(167, 139, 250, 0.06)', 
+    border: '1px solid rgba(167, 139, 250, 0.14)', 
+    color: '#dcd6f0', 
     borderRadius: '8px', 
     padding: '10px 20px', 
     fontSize: '13px', 
@@ -67,45 +67,45 @@ const s = {
   },
   main: { maxWidth: '1140px', margin: '0 auto', padding: '3rem 2rem' },
   card: { 
-    background: 'rgba(31, 41, 55, 0.3)', 
+    background: 'rgba(26, 16, 46, 0.42)', 
     backdropFilter: 'blur(12px)',
     WebkitBackdropFilter: 'blur(12px)',
-    border: '1px solid rgba(255, 255, 255, 0.07)', 
+    border: '1px solid rgba(167, 139, 250, 0.12)', 
     borderRadius: '16px', 
     padding: '2.25rem', 
     marginBottom: '2rem', 
-    boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.5), inset 0 1px 1px 0 rgba(255, 255, 255, 0.05)'
+    boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.5), inset 0 1px 1px 0 rgba(167, 139, 250, 0.08)'
   },
-  cardTitle: { fontSize: '18px', fontWeight: '600', color: '#f9fafb', margin: '0 0 1.75rem', letterSpacing: '-0.02em' },
+  cardTitle: { fontSize: '18px', fontWeight: '600', color: '#f3f0ff', margin: '0 0 1.75rem', letterSpacing: '-0.02em' },
   grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' },
   fullWidth: { gridColumn: 'span 2' },
-  label: { display: 'block', fontSize: '13px', fontWeight: '500', color: '#9ca3af', marginBottom: '8px' },
+  label: { display: 'block', fontSize: '13px', fontWeight: '500', color: '#aaa3c8', marginBottom: '8px' },
   input: { 
     width: '100%', 
     padding: '12px 16px', 
     borderRadius: '10px', 
-    border: '1px solid rgba(255, 255, 255, 0.1)', 
+    border: '1px solid rgba(167, 139, 250, 0.16)', 
     fontSize: '14px', 
     boxSizing: 'border-box', 
     outline: 'none', 
     transition: 'all 0.2s ease', 
-    background: 'rgba(17, 24, 39, 0.4)', 
-    color: '#f9fafb',
+    background: 'rgba(12, 6, 28, 0.45)', 
+    color: '#f3f0ff',
     boxShadow: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)'
   },
   textarea: { 
     width: '100%', 
     padding: '12px 16px', 
     borderRadius: '10px', 
-    border: '1px solid rgba(255, 255, 255, 0.1)', 
+    border: '1px solid rgba(167, 139, 250, 0.16)', 
     fontSize: '14px', 
     minHeight: '100px', 
     boxSizing: 'border-box', 
     fontFamily: 'Fira Code, SFMono-Regular, JetBrains Mono, monospace', 
     outline: 'none', 
     transition: 'all 0.2s ease', 
-    background: 'rgba(17, 24, 39, 0.4)', 
-    color: '#f9fafb', 
+    background: 'rgba(12, 6, 28, 0.45)', 
+    color: '#f3f0ff', 
     resize: 'vertical',
     boxShadow: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)'
   },
@@ -113,20 +113,20 @@ const s = {
     width: '100%', 
     padding: '12px 16px', 
     borderRadius: '10px', 
-    border: '1px solid rgba(255, 255, 255, 0.1)', 
+    border: '1px solid rgba(167, 139, 250, 0.16)', 
     fontSize: '14px', 
-    background: 'rgba(17, 24, 39, 0.5) url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%239ca3af\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e") no-repeat right 14px center/18px', 
+    background: 'rgba(12, 6, 28, 0.5) url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%23aaa3c8\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e") no-repeat right 14px center/18px', 
     appearance: 'none', 
-    color: '#f9fafb', 
+    color: '#f3f0ff', 
     cursor: 'pointer',
     outline: 'none',
     transition: 'all 0.2s ease'
   },
   tagContainer: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' },
   tagBadge: { fontSize: '12px', fontWeight: '500', padding: '6px 14px', borderRadius: '20px', cursor: 'pointer', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)' },
-  problemRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 0', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' },
+  problemRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 0', borderBottom: '1px solid rgba(167, 139, 250, 0.08)' },
   actionBtn: { padding: '8px 14px', fontSize: '12px', fontWeight: '600', borderRadius: '8px', border: '1px solid transparent', cursor: 'pointer', marginLeft: '8px', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)' },
-  testCaseRow: { background: 'rgba(17, 24, 39, 0.3)', border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: '12px', padding: '16px', marginBottom: '12px' }
+  testCaseRow: { background: 'rgba(12, 6, 28, 0.35)', border: '1px solid rgba(167, 139, 250, 0.1)', borderRadius: '12px', padding: '16px', marginBottom: '12px' }
 }
 
 export default function AdminPanel() {
@@ -293,7 +293,7 @@ export default function AdminPanel() {
 
   if (loading || !user || user.role !== 'admin') {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#030712', color: '#9ca3af', fontSize: '14px', fontFamily: 'sans-serif' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#0a0518', color: '#aaa3c8', fontSize: '14px', fontFamily: 'sans-serif' }}>
         Verifying secure administrative privileges...
       </div>
     )
@@ -303,18 +303,18 @@ export default function AdminPanel() {
     <div style={s.page}>
       <nav style={s.nav}>
         <p style={s.navTitle}>
-          <span style={{ color: '#38bdf8', filter: 'drop-shadow(0 0 8px rgba(56,189,248,0.5))' }}>⚙️</span> Core Repository Panel
+          <span style={{ color: '#a78bfa', filter: 'drop-shadow(0 0 8px rgba(56,189,248,0.5))' }}>⚙️</span> Core Repository Panel
         </p>
         <button 
           style={s.btnSecondary} 
           onClick={() => navigate(`/${user.username}`)}
           onMouseEnter={e => {
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
-            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+            e.currentTarget.style.background = 'rgba(167, 139, 250, 0.14)';
+            e.currentTarget.style.borderColor = 'rgba(167, 139, 250, 0.28)';
           }}
           onMouseLeave={e => {
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
-            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+            e.currentTarget.style.background = 'rgba(167, 139, 250, 0.06)';
+            e.currentTarget.style.borderColor = 'rgba(167, 139, 250, 0.14)';
           }}
         >
           Back to Dashboard
@@ -353,11 +353,11 @@ export default function AdminPanel() {
                   onChange={handleInputChange} 
                   required 
                   onFocus={e => {
-                    e.target.style.borderColor = '#38bdf8';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(56, 189, 248, 0.15), inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
+                    e.target.style.borderColor = '#a78bfa';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(167, 139, 250, 0.15), inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
                   }}
                   onBlur={e => {
-                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    e.target.style.borderColor = 'rgba(167, 139, 250, 0.16)';
                     e.target.style.boxShadow = 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
                   }}
                 />
@@ -367,10 +367,10 @@ export default function AdminPanel() {
                 <input 
                   style={{ 
                     ...s.input, 
-                    background: isEditing ? 'rgba(255,255,255,0.02)' : 'rgba(17, 24, 39, 0.4)', 
+                    background: isEditing ? 'rgba(255,255,255,0.02)' : 'rgba(12, 6, 28, 0.45)', 
                     cursor: isEditing ? 'not-allowed' : 'text', 
-                    color: isEditing ? '#6b7280' : '#f9fafb',
-                    borderColor: isEditing ? 'rgba(255,255,255,0.03)' : 'rgba(255, 255, 255, 0.1)'
+                    color: isEditing ? '#8d85ab' : '#f3f0ff',
+                    borderColor: isEditing ? 'rgba(255,255,255,0.03)' : 'rgba(167, 139, 250, 0.16)'
                   }} 
                   name="code" 
                   value={form.code} 
@@ -379,12 +379,12 @@ export default function AdminPanel() {
                   disabled={isEditing} 
                   onFocus={e => {
                     if (!isEditing) {
-                      e.target.style.borderColor = '#38bdf8';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(56, 189, 248, 0.15), inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
+                      e.target.style.borderColor = '#a78bfa';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(167, 139, 250, 0.15), inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
                     }
                   }}
                   onBlur={e => {
-                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    e.target.style.borderColor = 'rgba(167, 139, 250, 0.16)';
                     e.target.style.boxShadow = 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
                   }}
                 />
@@ -399,11 +399,11 @@ export default function AdminPanel() {
                   required 
                   placeholder="Describe the algorithmic puzzle task rules..."
                   onFocus={e => {
-                    e.target.style.borderColor = '#38bdf8';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(56, 189, 248, 0.15), inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
+                    e.target.style.borderColor = '#a78bfa';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(167, 139, 250, 0.15), inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
                   }}
                   onBlur={e => {
-                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    e.target.style.borderColor = 'rgba(167, 139, 250, 0.16)';
                     e.target.style.boxShadow = 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
                   }}
                 />
@@ -417,11 +417,11 @@ export default function AdminPanel() {
                   onChange={handleInputChange} 
                   placeholder="Brief high-level description summary..."
                   onFocus={e => {
-                    e.target.style.borderColor = '#38bdf8';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(56, 189, 248, 0.15), inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
+                    e.target.style.borderColor = '#a78bfa';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(167, 139, 250, 0.15), inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
                   }}
                   onBlur={e => {
-                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    e.target.style.borderColor = 'rgba(167, 139, 250, 0.16)';
                     e.target.style.boxShadow = 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
                   }}
                 />
@@ -433,12 +433,12 @@ export default function AdminPanel() {
                   name="difficulty" 
                   value={form.difficulty} 
                   onChange={handleInputChange}
-                  onFocus={e => e.target.style.borderColor = '#38bdf8'}
-                  onBlur={e => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+                  onFocus={e => e.target.style.borderColor = '#a78bfa'}
+                  onBlur={e => e.target.style.borderColor = 'rgba(167, 139, 250, 0.16)'}
                 >
-                  <option value="Easy" style={{background: '#111827'}}>Easy</option>
-                  <option value="Medium" style={{background: '#111827'}}>Medium</option>
-                  <option value="Hard" style={{background: '#111827'}}>Hard</option>
+                  <option value="Easy" style={{background: '#1a1030'}}>Easy</option>
+                  <option value="Medium" style={{background: '#1a1030'}}>Medium</option>
+                  <option value="Hard" style={{background: '#1a1030'}}>Hard</option>
                 </select>
               </div>
               <div>
@@ -450,11 +450,11 @@ export default function AdminPanel() {
                   onChange={handleInputChange} 
                   placeholder="e.g., 1 <= N <= 10^5"
                   onFocus={e => {
-                    e.target.style.borderColor = '#38bdf8';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(56, 189, 248, 0.15), inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
+                    e.target.style.borderColor = '#a78bfa';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(167, 139, 250, 0.15), inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
                   }}
                   onBlur={e => {
-                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    e.target.style.borderColor = 'rgba(167, 139, 250, 0.16)';
                     e.target.style.boxShadow = 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
                   }}
                 />
@@ -469,11 +469,11 @@ export default function AdminPanel() {
                   onChange={handleInputChange} 
                   placeholder="Paste multi-line matrix strings here..."
                   onFocus={e => {
-                    e.target.style.borderColor = '#38bdf8';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(56, 189, 248, 0.15), inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
+                    e.target.style.borderColor = '#a78bfa';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(167, 139, 250, 0.15), inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
                   }}
                   onBlur={e => {
-                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    e.target.style.borderColor = 'rgba(167, 139, 250, 0.16)';
                     e.target.style.boxShadow = 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
                   }}
                 />
@@ -487,11 +487,11 @@ export default function AdminPanel() {
                   onChange={handleInputChange} 
                   placeholder="Paste matching multi-line system answers..."
                   onFocus={e => {
-                    e.target.style.borderColor = '#38bdf8';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(56, 189, 248, 0.15), inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
+                    e.target.style.borderColor = '#a78bfa';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(167, 139, 250, 0.15), inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
                   }}
                   onBlur={e => {
-                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    e.target.style.borderColor = 'rgba(167, 139, 250, 0.16)';
                     e.target.style.boxShadow = 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
                   }}
                 />
@@ -507,22 +507,22 @@ export default function AdminPanel() {
                         key={tag} 
                         style={{ 
                           ...s.tagBadge, 
-                          background: isSelected ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.03)', 
-                          color: isSelected ? '#38bdf8' : '#9ca3af',
-                          border: isSelected ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.08)',
-                          boxShadow: isSelected ? '0 0 12px 0 rgba(56, 189, 248, 0.2)' : 'none'
+                          background: isSelected ? 'rgba(167, 139, 250, 0.2)' : 'rgba(167, 139, 250, 0.05)', 
+                          color: isSelected ? '#a78bfa' : '#aaa3c8',
+                          border: isSelected ? '1px solid #a78bfa' : '1px solid rgba(167, 139, 250, 0.14)',
+                          boxShadow: isSelected ? '0 0 12px 0 rgba(167, 139, 250, 0.2)' : 'none'
                         }} 
                         onClick={() => handleTagToggle(tag)}
                         onMouseEnter={e => {
                           if (!isSelected) {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
-                            e.currentTarget.style.color = '#f9fafb';
+                            e.currentTarget.style.background = 'rgba(167, 139, 250, 0.14)';
+                            e.currentTarget.style.color = '#f3f0ff';
                           }
                         }}
                         onMouseLeave={e => {
                           if (!isSelected) {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
-                            e.currentTarget.style.color = '#9ca3af';
+                            e.currentTarget.style.background = 'rgba(167, 139, 250, 0.05)';
+                            e.currentTarget.style.color = '#aaa3c8';
                           }
                         }}
                       >
@@ -539,11 +539,11 @@ export default function AdminPanel() {
                 style={s.btn}
                 onMouseEnter={e => {
                   e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px 0 rgba(56, 189, 248, 0.4)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px 0 rgba(167, 139, 250, 0.4)';
                 }}
                 onMouseLeave={e => {
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 14px 0 rgba(56, 189, 248, 0.3)';
+                  e.currentTarget.style.boxShadow = '0 4px 14px 0 rgba(167, 139, 250, 0.3)';
                 }}
               >
                 {isEditing ? "Save Parameters" : "Create Registry"}
@@ -553,8 +553,8 @@ export default function AdminPanel() {
                   type="button" 
                   style={s.btnSecondary} 
                   onClick={clearForm}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(167, 139, 250, 0.14)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(167, 139, 250, 0.06)'}
                 >
                   Cancel
                 </button>
@@ -570,8 +570,8 @@ export default function AdminPanel() {
             {problems.map(p => (
               <div key={p.code} style={s.problemRow}>
                 <div>
-                  <strong style={{ color: '#f9fafb', fontSize: '14px', fontWeight: '500' }}>{p.name}</strong>
-                  <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '10px', fontFamily: 'Fira Code, monospace', background: 'rgba(255,255,255,0.03)', padding: '2px 6px', borderRadius: '4px' }}>{p.code}</span>
+                  <strong style={{ color: '#f3f0ff', fontSize: '14px', fontWeight: '500' }}>{p.name}</strong>
+                  <span style={{ fontSize: '12px', color: '#8d85ab', marginLeft: '10px', fontFamily: 'Fira Code, monospace', background: 'rgba(255,255,255,0.03)', padding: '2px 6px', borderRadius: '4px' }}>{p.code}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                   <button 
@@ -583,10 +583,10 @@ export default function AdminPanel() {
                     Test Cases
                   </button>
                   <button 
-                    style={{ ...s.actionBtn, color: '#60a5fa', borderColor: 'rgba(96, 165, 250, 0.2)', background: 'rgba(30, 58, 138, 0.2)' }} 
+                    style={{ ...s.actionBtn, color: '#a78bfa', borderColor: 'rgba(167, 139, 250, 0.2)', background: 'rgba(30, 58, 138, 0.2)' }} 
                     onClick={() => handleEditSelect(p.code)}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(30, 58, 138, 0.4)'; e.currentTarget.style.borderColor = '#60a5fa'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(30, 58, 138, 0.2)'; e.currentTarget.style.borderColor = 'rgba(96, 165, 250, 0.2)'; }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(30, 58, 138, 0.4)'; e.currentTarget.style.borderColor = '#a78bfa'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(30, 58, 138, 0.2)'; e.currentTarget.style.borderColor = 'rgba(167, 139, 250, 0.2)'; }}
                   >
                     Edit
                   </button>
@@ -606,52 +606,52 @@ export default function AdminPanel() {
 
         {/* --- DYNAMIC TEST CASES CRUD PANEL --- */}
         {selectedProblemCode && (
-          <div style={{ ...s.card, borderTop: '3px solid #38bdf8', borderTopLeftRadius: '6px', borderTopRightRadius: '6px' }}>
-            <p style={{ ...s.cardTitle, marginBottom: '6px' }}>🧪 Test Cases Matrix for: <span style={{color: '#38bdf8', fontFamily: 'Fira Code, monospace', fontWeight: '500'}}>{selectedProblemCode}</span></p>
-            <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '24px' }}>Perform full management modifications directly against active records.</p>
+          <div style={{ ...s.card, borderTop: '3px solid #a78bfa', borderTopLeftRadius: '6px', borderTopRightRadius: '6px' }}>
+            <p style={{ ...s.cardTitle, marginBottom: '6px' }}>🧪 Test Cases Matrix for: <span style={{color: '#a78bfa', fontFamily: 'Fira Code, monospace', fontWeight: '500'}}>{selectedProblemCode}</span></p>
+            <p style={{ fontSize: '13px', color: '#aaa3c8', marginBottom: '24px' }}>Perform full management modifications directly against active records.</p>
 
             {/* Create / Edit Form */}
-            <form onSubmit={handleTestCaseSubmit} style={{ marginBottom: '2rem', background: 'rgba(17, 24, 39, 0.3)', padding: '24px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-              <p style={{ fontSize: '12px', fontWeight: '700', letterSpacing: '0.05em', textTransform: 'uppercase', color: '#9ca3af', margin: '0 0 16px 0' }}>
+            <form onSubmit={handleTestCaseSubmit} style={{ marginBottom: '2rem', background: 'rgba(12, 6, 28, 0.35)', padding: '24px', borderRadius: '12px', border: '1px solid rgba(167, 139, 250, 0.08)' }}>
+              <p style={{ fontSize: '12px', fontWeight: '700', letterSpacing: '0.05em', textTransform: 'uppercase', color: '#aaa3c8', margin: '0 0 16px 0' }}>
                 {isEditingTestCaseId ? "✏️ Edit Target Test Case" : "➕ Append New Test Case Node"}
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
                 <div>
                   <label style={s.label}>Input Stream Data</label>
                   <textarea 
-                    style={{...s.textarea, background: 'rgba(17, 24, 39, 0.5)'}} 
+                    style={{...s.textarea, background: 'rgba(12, 6, 28, 0.5)'}} 
                     value={tcForm.input} 
                     onChange={e => setTcForm({...tcForm, input: e.target.value})} 
                     required 
                     placeholder="Provide multiline input stream..."
-                    onFocus={e => { e.target.style.borderColor = '#38bdf8'; }}
-                    onBlur={e => { e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'; }}
+                    onFocus={e => { e.target.style.borderColor = '#a78bfa'; }}
+                    onBlur={e => { e.target.style.borderColor = 'rgba(167, 139, 250, 0.16)'; }}
                   />
                 </div>
                 <div>
                   <label style={s.label}>Expected Output Match</label>
                   <textarea 
-                    style={{...s.textarea, background: 'rgba(17, 24, 39, 0.5)'}} 
+                    style={{...s.textarea, background: 'rgba(12, 6, 28, 0.5)'}} 
                     value={tcForm.output} 
                     onChange={e => setTcForm({...tcForm, output: e.target.value})} 
                     required 
                     placeholder="Provide expected matching output..."
-                    onFocus={e => { e.target.style.borderColor = '#38bdf8'; }}
-                    onBlur={e => { e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'; }}
+                    onFocus={e => { e.target.style.borderColor = '#a78bfa'; }}
+                    onBlur={e => { e.target.style.borderColor = 'rgba(167, 139, 250, 0.16)'; }}
                   />
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: '#d1d5db', cursor: 'pointer', userSelect: 'none' }}>
-                  <input type="checkbox" checked={tcForm.isHidden} onChange={e => setTcForm({...tcForm, isHidden: e.target.checked})} style={{ width: '16px', height: '16px', accentColor: '#38bdf8', cursor: 'pointer' }}/>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: '#c7bfe0', cursor: 'pointer', userSelect: 'none' }}>
+                  <input type="checkbox" checked={tcForm.isHidden} onChange={e => setTcForm({...tcForm, isHidden: e.target.checked})} style={{ width: '16px', height: '16px', accentColor: '#a78bfa', cursor: 'pointer' }}/>
                   Flag as Hidden (Secret System Evaluation Case)
                 </label>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button 
                     type="submit" 
-                    style={{ ...s.btn, background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', color: '#ffffff', boxShadow: '0 4px 14px 0 rgba(37, 99, 235, 0.3)' }}
-                    onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 6px 18px 0 rgba(37, 99, 235, 0.4)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 4px 14px 0 rgba(37, 99, 235, 0.3)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                    style={{ ...s.btn, background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)', color: '#ffffff', boxShadow: '0 4px 14px 0 rgba(124, 58, 237, 0.3)' }}
+                    onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 6px 18px 0 rgba(124, 58, 237, 0.4)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 4px 14px 0 rgba(124, 58, 237, 0.3)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                   >
                     {isEditingTestCaseId ? "Update Case" : "Push Case Entry"}
                   </button>
@@ -666,26 +666,26 @@ export default function AdminPanel() {
 
             {/* List Array */}
             <div>
-              <p style={{ fontSize: '14px', fontWeight: '600', color: '#e5e7eb', marginBottom: '16px' }}>Active Instances Array ({testCases.length})</p>
+              <p style={{ fontSize: '14px', fontWeight: '600', color: '#dcd6f0', marginBottom: '16px' }}>Active Instances Array ({testCases.length})</p>
               {testCases.length === 0 ? (
-                <p style={{ fontSize: '13px', color: '#6b7280', padding: '24px 0', textAlign: 'center', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '12px' }}>
+                <p style={{ fontSize: '13px', color: '#8d85ab', padding: '24px 0', textAlign: 'center', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '12px' }}>
                   No active test cases compiled for this problem slug yet.
                 </p>
               ) : (
                 testCases.map((tc, index) => (
                   <div key={tc._id || index} style={s.testCaseRow}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <span style={{ fontSize: '11px', fontWeight: '600', color: tc.isHidden ? '#a78bfa' : '#38bdf8', background: tc.isHidden ? 'rgba(88, 28, 135, 0.3)' : 'rgba(7, 89, 133, 0.3)', padding: '4px 10px', borderRadius: '6px', border: `1px solid ${tc.isHidden ? 'rgba(167, 139, 250, 0.2)' : 'rgba(56, 189, 248, 0.2)'}` }}>
+                      <span style={{ fontSize: '11px', fontWeight: '600', color: tc.isHidden ? '#a78bfa' : '#a78bfa', background: tc.isHidden ? 'rgba(88, 28, 135, 0.3)' : 'rgba(7, 89, 133, 0.3)', padding: '4px 10px', borderRadius: '6px', border: `1px solid ${tc.isHidden ? 'rgba(167, 139, 250, 0.2)' : 'rgba(167, 139, 250, 0.2)'}` }}>
                         Case #{index + 1} {tc.isHidden ? '👁️‍🗨️ (Hidden)' : '🌍 (Public)'}
                       </span>
                       <div style={{ display: 'flex', gap: '4px' }}>
-                        <button style={{ ...s.actionBtn, margin: 0, padding: '4px 10px', color: '#60a5fa', background: 'transparent' }} onClick={() => startTestCaseEdit(tc)}>Modify</button>
+                        <button style={{ ...s.actionBtn, margin: 0, padding: '4px 10px', color: '#a78bfa', background: 'transparent' }} onClick={() => startTestCaseEdit(tc)}>Modify</button>
                         <button style={{ ...s.actionBtn, margin: 0, padding: '4px 10px', color: '#f87171', background: 'transparent' }} onClick={() => handleTestCaseDelete(tc._id)}>Purge</button>
                       </div>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '13px', fontFamily: 'Fira Code, monospace', background: 'rgba(17, 24, 39, 0.5)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)', color: '#d1d5db' }}>
-                      <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}><strong style={{ color: '#4b5563', display: 'block', marginBottom: '4px' }}>In:</strong>{tc.input}</div>
-                      <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}><strong style={{ color: '#4b5563', display: 'block', marginBottom: '4px' }}>Out:</strong>{tc.output}</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '13px', fontFamily: 'Fira Code, monospace', background: 'rgba(12, 6, 28, 0.5)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)', color: '#c7bfe0' }}>
+                      <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}><strong style={{ color: '#6f6790', display: 'block', marginBottom: '4px' }}>In:</strong>{tc.input}</div>
+                      <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}><strong style={{ color: '#6f6790', display: 'block', marginBottom: '4px' }}>Out:</strong>{tc.output}</div>
                     </div>
                   </div>
                 ))
