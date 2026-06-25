@@ -6,31 +6,32 @@ const BACKEND_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:5000';
 const AVAILABLE_TAGS = ['Array', 'String', 'Hash Table', 'Dynamic Programming', 'Math', 'Sorting', 'Greedy', 'Tree', 'Graph'];
 
 const s = {
-  page: { minHeight: '100vh', background: '#f5f5f5', fontFamily: 'system-ui, sans-serif' },
-  nav: { background: '#fff', borderBottom: '0.5px solid #e0e0e0', padding: '0 2rem', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
-  navTitle: { fontSize: '16px', fontWeight: '500', color: '#111', margin: 0 },
-  navActions: { display: 'flex', alignItems: 'center', gap: '8px' },
-  logoutBtn: { background: 'none', border: '1px solid #ddd', borderRadius: '8px', padding: '6px 14px', fontSize: '13px', cursor: 'pointer', color: '#555' },
-  adminBtn: { background: '#dc2626', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 14px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' },
-  main: { maxWidth: '1000px', margin: '0 auto', padding: '2rem 1rem' },
-  welcome: { fontSize: '22px', fontWeight: '500', color: '#111', margin: '0 0 0.25rem' },
-  welcomeSub: { fontSize: '14px', color: '#888', margin: '0 0 2rem' },
-  card: { background: '#fff', border: '0.5px solid #e0e0e0', borderRadius: '10px', padding: '1.25rem', marginBottom: '1rem' },
-  cardTitle: { fontSize: '15px', fontWeight: '500', color: '#111', margin: '0 0 1rem', display: 'flex', alignItems: 'center', gap: '6px' },
-  filterBar: { display: 'flex', gap: '12px', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' },
-  input: { padding: '8px 12px', borderRadius: '6px', border: '1px solid #ccc', fontSize: '14px', minWidth: '200px', color: '#111' },
-  select: { padding: '8px 12px', borderRadius: '6px', border: '1px solid #ccc', fontSize: '14px', background: '#fff', color: '#111', cursor: 'pointer' },
-  multiSelectContainer: { position: 'relative', minWidth: '240px' },
-  multiSelectBox: { padding: '8px 12px', borderRadius: '6px', border: '1px solid #ccc', fontSize: '14px', background: '#fff', color: '#111', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  dropdownMenu: { position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #ccc', borderRadius: '6px', marginTop: '4px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 10, maxHeight: '220px', overflowY: 'auto', padding: '6px 0' },
-  dropdownItem: { display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', fontSize: '14px', color: '#111', cursor: 'pointer' },
-  problemRow: { display: 'flex', alignItems: 'center', padding: '1rem', borderBottom: '0.5px solid #f0f0f0', cursor: 'pointer' },
-  problemName: { flex: 1, fontSize: '14px', fontWeight: '500', color: '#111' },
-  problemDifficulty: { fontSize: '12px', fontWeight: '500', padding: '3px 8px', borderRadius: '4px', marginRight: '1rem' },
-  difficultyEasy: { background: '#d1fae5', color: '#047857' },
-  difficultyMedium: { background: '#fef3c7', color: '#b45309' },
-  difficultyHard: { background: '#fee2e2', color: '#dc2626' },
-  tagBadge: { fontSize: '11px', background: '#f0f0f0', color: '#666', padding: '2px 6px', borderRadius: '4px', marginRight: '4px' }
+  page: { minHeight: '100vh', background: 'radial-gradient(circle at 50% 0%, #111827 0%, #030712 100%)', fontFamily: 'Inter, system-ui, sans-serif', color: '#f3f4f6', letterSpacing: '-0.01em' },
+  nav: { background: 'rgba(17, 24, 39, 0.65)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', padding: '0 2.5rem', height: '70px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 40 },
+  navTitle: { fontSize: '16px', fontWeight: '600', color: '#f9fafb', margin: 0, letterSpacing: '-0.02em' },
+  navActions: { display: 'flex', alignItems: 'center', gap: '12px' },
+  logoutBtn: { background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '8px', padding: '9px 16px', fontSize: '13px', fontWeight: '500', cursor: 'pointer', color: '#d1d5db', transition: 'all 0.2s ease', backdropFilter: 'blur(8px)' },
+  adminBtn: { background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '9px 16px', fontSize: '13px', cursor: 'pointer', fontWeight: '600', transition: 'all 0.2s ease', boxShadow: '0 4px 12px 0 rgba(239, 68, 68, 0.25)' },
+  main: { maxWidth: '1040px', margin: '0 auto', padding: '3rem 2rem' },
+  welcome: { fontSize: '28px', fontWeight: '700', color: '#f9fafb', margin: '0 0 6px 0', letterSpacing: '-0.03em' },
+  welcomeSub: { fontSize: '14px', color: '#9ca3af', margin: '0 0 2.5rem 0' },
+  card: { background: 'rgba(31, 41, 55, 0.3)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1px solid rgba(255, 255, 255, 0.07)', borderRadius: '16px', padding: '2rem', marginBottom: '1.5rem', boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.5), inset 0 1px 1px 0 rgba(255, 255, 255, 0.05)' },
+  cardTitle: { fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9ca3af', margin: '0 0 1.5rem', display: 'flex', alignItems: 'center', gap: '8px' },
+  filterBar: { display: 'flex', gap: '14px', marginBottom: '0.25rem', flexWrap: 'wrap', alignItems: 'center' },
+  input: { padding: '11px 16px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '14px', minWidth: '260px', color: '#f9fafb', outline: 'none', transition: 'all 0.2s ease', background: 'rgba(17, 24, 39, 0.4)', boxShadow: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.15)' },
+  select: { padding: '11px 16px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '14px', background: 'rgba(17, 24, 39, 0.4) url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%239ca3af\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e") no-repeat right 14px center/18px', appearance: 'none', paddingRight: '40px', color: '#f9fafb', cursor: 'pointer', outline: 'none', transition: 'all 0.2s ease' },
+  multiSelectContainer: { position: 'relative', minWidth: '260px' },
+  multiSelectBox: { padding: '11px 16px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '14px', background: 'rgba(17, 24, 39, 0.4)', color: '#f9fafb', cursor: 'pointer', display: 'flex', justifycontent: 'space-between', alignItems: 'center', transition: 'all 0.2s ease' },
+  dropdownMenu: { position: 'absolute', top: '100%', left: 0, right: 0, background: 'rgba(17, 24, 39, 0.95)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', marginTop: '8px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.7)', zIndex: 50, maxHeight: '240px', overflowY: 'auto', padding: '8px' },
+  dropdownItem: { display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', fontSize: '13px', fontWeight: '500', color: '#e5e7eb', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.15s ease' },
+  problemRow: { display: 'flex', alignItems: 'center', padding: '1.25rem 1.5rem', borderBottom: '1px solid rgba(255, 255, 255, 0.04)', cursor: 'pointer', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)' },
+  problemName: { fontSize: '15px', fontWeight: '600', color: '#f9fafb' },
+  problemDesc: { fontSize: '13px', color: '#9ca3af', marginTop: '4px', maxWidth: '720px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  problemDifficulty: { fontSize: '11px', fontWeight: '700', padding: '4px 12px', borderRadius: '20px', marginRight: '1.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  difficultyEasy: { background: 'rgba(6, 78, 59, 0.3)', color: '#34d399', border: '1px solid rgba(52, 211, 153, 0.2)' },
+  difficultyMedium: { background: 'rgba(120, 53, 15, 0.3)', color: '#fbbf24', border: '1px solid rgba(251, 191, 36, 0.2)' },
+  difficultyHard: { background: 'rgba(127, 29, 29, 0.3)', color: '#f87171', border: '1px solid rgba(248, 113, 113, 0.2)' },
+  tagBadge: { fontSize: '11px', fontWeight: '500', background: 'rgba(255, 255, 255, 0.04)', color: '#9ca3af', padding: '3px 10px', borderRadius: '6px', marginRight: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }
 }
 
 export default function Dashboard() {
@@ -99,23 +100,48 @@ export default function Dashboard() {
     return () => window.removeEventListener('click', closeMenu);
   }, [isDropdownOpen]);
 
-  if (loading) return <div style={{ padding: '40px', color: '#888' }}>Loading Auth Profile...</div>
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#030712', color: '#9ca3af', fontSize: '14px', fontFamily: 'sans-serif' }}>
+        Loading Auth Profile...
+      </div>
+    )
+  }
   if (!user) return null
 
   return (
     <div style={s.page}>
       <nav style={s.nav}>
-        <p style={s.navTitle}>Online Judge Dashboard</p>
+        <p style={s.navTitle}>⚡ Online Judge Dashboard</p>
         
         <div style={s.navActions}>
           {user.role === 'admin' && (
-            <button style={s.adminBtn} onClick={() => navigate(`/${user.username}/admin`)}>
+            <button 
+              style={s.adminBtn} 
+              onClick={() => navigate(`/${user.username}/admin`)}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 16px 0 rgba(239, 68, 68, 0.4)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 12px 0 rgba(239, 68, 68, 0.25)'; }}
+            >
               Admin Panel
             </button>
           )}
           
-          <button style={{ ...s.logoutBtn, background: '#111', color: '#fff', border: 'none' }} onClick={() => navigate(`/${user.username}/profile`)}>Profile</button>
-          <button style={s.logoutBtn} onClick={async () => { await logout(); navigate('/auth') }}>Logout</button>
+          <button 
+            style={{ ...s.logoutBtn, background: 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)', color: '#030712', border: 'none', fontWeight: '600', boxShadow: '0 4px 12px 0 rgba(56, 189, 248, 0.25)' }} 
+            onClick={() => navigate(`/${user.username}/profile`)}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 16px 0 rgba(56, 189, 248, 0.4)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 12px 0 rgba(56, 189, 248, 0.25)'; }}
+          >
+            Profile
+          </button>
+          <button 
+            style={s.logoutBtn} 
+            onClick={async () => { await logout(); navigate('/auth') }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)'; }}
+          >
+            Logout
+          </button>
         </div>
       </nav>
 
@@ -123,7 +149,6 @@ export default function Dashboard() {
         <h1 style={s.welcome}>Welcome back, {user.username} 👋</h1>
         <p style={s.welcomeSub}>Manage workspace filters or choose a problem below to open the code editor.</p>
 
-        {/* Filters Structure Panel */}
         <div style={s.card}>
           <p style={s.cardTitle}>🎛️ Filter Challenges</p>
           <div style={s.filterBar}>
@@ -133,24 +158,37 @@ export default function Dashboard() {
               placeholder="Search by name..." 
               value={search} 
               onChange={e => setSearch(e.target.value)}
+              onFocus={e => { e.target.style.borderColor = '#38bdf8'; e.target.style.boxShadow = '0 0 0 3px rgba(56, 189, 248, 0.15)'; }}
+              onBlur={e => { e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'; e.target.style.boxShadow = 'none'; }}
             />
 
-            <select style={s.select} value={difficulty} onChange={e => setDifficulty(e.target.value)}>
-              <option value="">All Difficulties</option>
-              <option value="Easy">Easy</option>
-              <option value="Medium">Medium</option>
-              <option value="Hard">Hard</option>
+            <select 
+              style={s.select} 
+              value={difficulty} 
+              onChange={e => setDifficulty(e.target.value)}
+              onFocus={e => e.target.style.borderColor = '#38bdf8'}
+              onBlur={e => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+            >
+              <option value="" style={{background: '#111827'}}>All Difficulties</option>
+              <option value="Easy" style={{background: '#111827'}}>Easy</option>
+              <option value="Medium" style={{background: '#111827'}}>Medium</option>
+              <option value="Hard" style={{background: '#111827'}}>Hard</option>
             </select>
 
             <div style={s.multiSelectContainer} onClick={e => e.stopPropagation()}>
-              <div style={s.multiSelectBox} onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
-                <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '180px', color: selectedTags.length === 0 ? '#757575' : '#111' }}>
+              <div 
+                style={s.multiSelectBox} 
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+              >
+                <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '180px', color: selectedTags.length === 0 ? '#9ca3af' : '#f9fafb', fontWeight: selectedTags.length === 0 ? '400' : '500' }}>
                   {selectedTags.length === 0 
                     ? 'Select Tags...' 
                     : `Tags (${selectedTags.length}): ${selectedTags.slice(0, 2).join(', ')}${selectedTags.length > 2 ? '...' : ''}`
                   }
                 </span>
-                <span>{isDropdownOpen ? '▲' : '▼'}</span>
+                <span style={{ fontSize: '10px', color: '#9ca3af', transition: 'transform 0.2s' }} style={{ transform: isDropdownOpen ? 'rotate(180deg)' : 'none' }}>▼</span>
               </div>
 
               {isDropdownOpen && (
@@ -160,10 +198,12 @@ export default function Dashboard() {
                     return (
                       <div 
                         key={tag} 
-                        style={{ ...s.dropdownItem, background: isChecked ? '#f0f7ff' : 'transparent' }} 
+                        style={{ ...s.dropdownItem, background: isChecked ? 'rgba(255,255,255,0.06)' : 'transparent' }} 
                         onClick={() => handleTagToggle(tag)}
+                        onMouseEnter={e => !isChecked && (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
+                        onMouseLeave={e => !isChecked && (e.currentTarget.style.background = 'transparent')}
                       >
-                        <input type="checkbox" checked={isChecked} onChange={() => {}} style={{ cursor: 'pointer' }} />
+                        <input type="checkbox" checked={isChecked} onChange={() => {}} style={{ cursor: 'pointer', accentColor: '#38bdf8' }} />
                         <span>{tag}</span>
                       </div>
                     );
@@ -174,26 +214,35 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Problem Matrix Mapping Grid */}
-        <div style={s.card}>
-          <p style={s.cardTitle}>⚡ Challenges ({problems.length})</p>
+        <div style={{ ...s.card, padding: 0, overflow: 'hidden' }}>
+          <div style={{ ...s.cardTitle, margin: 0, padding: '1.5rem 1.5rem 0.75rem 1.5rem' }}>⚡ Challenges ({problems.length})</div>
           <div>
             {isFetching ? (
-              <p style={{ padding: '20px', color: '#888' }}>Loading problems matches...</p>
+              <p style={{ padding: '32px', color: '#9ca3af', fontSize: '14px', textAlign: 'center' }}>Loading problem matches...</p>
             ) : problems.length === 0 ? (
-              <p style={{ padding: '20px', color: '#888' }}>No problems match criteria.</p>
+              <p style={{ padding: '32px', color: '#9ca3af', fontSize: '14px', textAlign: 'center' }}>No problems match criteria.</p>
             ) : (
               problems.map(p => (
                 <div 
                   key={p.code} 
                   style={s.problemRow} 
                   onClick={() => navigate(`/${user.username}/${p.code}`)}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f9f9f9'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff'}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)';
+                    e.currentTarget.style.paddingLeft = '1.75rem';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.paddingLeft = '1.5rem';
+                  }}
                 >
-                  <div style={{ flex: 1 }}>
-                    <div style={{ ...s.problemName, marginBottom: '4px' }}>{p.name}</div>
-                    <div>{p.tags?.map(t => <span key={t} style={s.tagBadge}>{t}</span>)}</div>
+                  <div style={{ flex: 1, paddingRight: '1rem' }}>
+                    <div style={s.problemName}>{p.name}</div>
+                    {/* ENHANCEMENT: Render short description here */}
+                    {p.description && <div style={s.problemDesc}>{p.description}</div>}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '8px' }}>
+                      {p.tags?.map(t => <span key={t} style={s.tagBadge}>{t}</span>)}
+                    </div>
                   </div>
                   <span style={{ 
                     ...s.problemDifficulty, 
@@ -201,7 +250,7 @@ export default function Dashboard() {
                   }}>
                     {p.difficulty}
                   </span>
-                  <span>→</span>
+                  <span style={{ color: '#4b5563', fontSize: '16px', fontWeight: '600' }}>→</span>
                 </div>
               ))
             )}

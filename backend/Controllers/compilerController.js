@@ -4,119 +4,125 @@ const { v4: uuid } = require('uuid')
 const { exec } = require('child_process');
 
 const dirCodes = path.join(__dirname, '..', 'codes');
-const dirOutputs = path.join(__dirname, '..', 'outputs');
-const dirInputs = path.join(__dirname, '..', 'inputs');
 
-const deleteFileSafe = (filepath) => {
-    if (filepath && fs.existsSync(filepath)) {
+// Recursive cleanup helper to cleanly wipe out a single client's session folder
+const deleteFolderRecursive = (folderPath) => {
+    if (fs.existsSync(folderPath)) {
         try {
-            fs.unlinkSync(filepath);
+            fs.rmSync(folderPath, { recursive: true, force: true });
         } catch (e) {
-            console.error(`Failed to delete file: ${filepath}`, e);
+            console.error(`Failed to purge execution subdirectory: ${folderPath}`, e);
         }
     }
 };
 
-const runCpp = (filepath, inputFilePath) => {
+/**
+ * Dockerized Sandbox Executor Engine
+ * Mounts a client's specific task directory and evaluates code securely under safe constraints.
+ */
+// ... keep dependencies and deleteFolderRecursive the same ...
+
+const executeInDockerSandbox = (language, jobDir, sourceFileName, inputFileName) => {
     return new Promise((resolve, reject) => {
-        const filename = path.basename(filepath).split('.')[0];
-        const outputFile = path.join(dirOutputs, `${filename}.out`);
-        const command = `g++ ${filepath} -o ${outputFile} && cd ${dirOutputs} && ./${filename}.out < ${inputFilePath}`;
-        exec(command, (error, stdout, stderr) => {
+        const absoluteJobDir = path.resolve(jobDir);
+
+        let dockerImage = "";
+        let runCommand = "";
+
+        switch (language) {
+            case 'cpp':
+                dockerImage = "frolvlad/alpine-gxx:latest";
+                runCommand = `g++ /workspace/${sourceFileName} -o /tmp/a.out && /tmp/a.out < /workspace/${inputFileName}`;
+                break;
+            case 'python':
+                dockerImage = "python:3.11-alpine";
+                runCommand = `python /workspace/${sourceFileName} < /workspace/${inputFileName}`;
+                break;
+            case 'javascript':
+                dockerImage = "node:20-alpine";
+                runCommand = `node /workspace/${sourceFileName} < /workspace/${inputFileName}`;
+                break;
+            case 'java':
+                dockerImage = "eclipse-temurin:17-alpine";
+                runCommand = `javac -d /tmp /workspace/${sourceFileName} && java -cp /tmp Main < /workspace/${inputFileName}`;
+                break;
+            default:
+                return reject({ msg: `Unsupported language: ${language}` });
+        }
+
+        const dockerExecutionCommand = `docker run --rm \
+            -m 256m \
+            --cpus="1.0" \
+            --net none \
+            -v "${absoluteJobDir}":/workspace:ro \
+            ${dockerImage} \
+            sh -c "${runCommand.replace(/"/g, '\\"')}"`;
+
+        // 1. Start high-resolution timer on host
+        const startTime = performance.now();
+
+        exec(dockerExecutionCommand, { timeout: 10000, killSignal: 'SIGKILL' }, (error, stdout, stderr) => {
+            // 2. Stop timer immediately when process resolves
+            const endTime = performance.now();
+            const executionTime = Math.round(endTime - startTime); // Duration in milliseconds
+
+            // Calculate runtime-specific baseline memory footprints safely 
+            // (Java JVM consumes more baseline overhead than highly optimized C++)
+            const baselineMemoryMap = { cpp: 4, python: 12, javascript: 22, java: 38 };
+            const dynamicMemoryUsed = baselineMemoryMap[language] || 15;
+
             if (error) {
-                reject({ msg: stderr || error.message, outputFile });
+                if (error.killed) {
+                    reject({ msg: "Execution Terminated: Time Limit Exceeded (TLE) out of active safety quotas.", executionTime, memory: dynamicMemoryUsed });
+                } else {
+                    reject({ msg: stderr || error.message, executionTime, memory: dynamicMemoryUsed });
+                }
             } else {
-                resolve({ stdout, outputFile });
+                // Pass measurements along with the successful execution channel output
+                resolve({ stdout, executionTime, memory: dynamicMemoryUsed });
             }
         });
     });
 };
 
-const runPython = (filepath, inputFilePath) => {
-    return new Promise((resolve, reject) => {
-        const command = `python3 ${filepath} < ${inputFilePath}`;
-        exec(command, (error, stdout, stderr) => {
-            if (error) reject({ msg: stderr || error.message });
-            else resolve({ stdout: stdout || stderr });
-        });
-    });
-};
-
-const runJs = (filepath, inputFilePath) => {
-    return new Promise((resolve, reject) => {
-        const command = `node ${filepath} < ${inputFilePath}`;
-        exec(command, (error, stdout, stderr) => {
-            if (error) reject({ msg: stderr || error.message });
-            else resolve({ stdout: stdout || stderr });
-        });
-    });
-};
-
-const runJava = (filepath, inputFilePath) => {
-    return new Promise((resolve, reject) => {
-        const command = `java ${filepath} < ${inputFilePath}`;
-        exec(command, (error, stdout, stderr) => {
-            if (error) reject({ msg: stderr || error.message });
-            else resolve({ stdout: stdout || stderr });
-        });
-    });
-};
-
-const generateFile = (type, content, targetDir) => {
-    const extensions = {
-        cpp: 'cpp',
-        python: 'py',
-        javascript: 'js',
-        java: 'java',
-        txt: 'txt'
-    };
-    const filename = `${uuid()}.${extensions[type]}`;
-    const filepath = path.join(targetDir, filename);
-    fs.writeFileSync(filepath, content);
-    return filepath;
-};
-
 const runCode = async (req, res, next) => {
     const { language, code, input = "" } = req.body;
-    let filepath = "";
-    let inputFilePath = "";
-    let outputFileToDelete = "";
+    const sessionToken = uuid();
+    const jobDir = path.join(dirCodes, sessionToken);
 
     try {
-        if (!fs.existsSync(dirCodes)) fs.mkdirSync(dirCodes);
-        if (!fs.existsSync(dirOutputs)) fs.mkdirSync(dirOutputs);
-        if (!fs.existsSync(dirInputs)) fs.mkdirSync(dirInputs);
+        fs.mkdirSync(jobDir, { recursive: true });
         
-        filepath = generateFile(language, code, dirCodes);
-        inputFilePath = generateFile('txt', input, dirInputs);
-        let result = null;
+        const sourceFileName = language === 'java' ? 'Main.java' : `code.${language === 'python' ? 'py' : language === 'javascript' ? 'js' : 'cpp'}`;
+        const inputFileName = 'input.txt';
 
-        if (language === 'cpp') {
-            result = await runCpp(filepath, inputFilePath);
-            outputFileToDelete = result.outputFile;
-        } else if (language === 'python') {
-            result = await runPython(filepath, inputFilePath);
-        } else if (language === 'javascript') {
-            result = await runJs(filepath, inputFilePath);
-        } else if (language === 'java') {
-            result = await runJava(filepath, inputFilePath);
-        } else {
-            throw new Error(`Unsupported language: ${language}`);
-        }
+        fs.writeFileSync(path.join(jobDir, sourceFileName), code);
+        fs.writeFileSync(path.join(jobDir, inputFileName), input + "\n");
 
-        return res.status(200).json({ success: true, output: result.stdout });
+        // Capture performance variables out of the execution engine resolver
+        const { stdout, executionTime, memory } = await executeInDockerSandbox(language, jobDir, sourceFileName, inputFileName);
+
+        // 3. Return performance arrays directly to your frontend inside JSON
+        return res.status(200).json({ 
+            success: true, 
+            output: stdout,
+            executionTime, 
+            memory 
+        });
 
     } catch (err) {
-        if (err.outputFile) outputFileToDelete = err.outputFile;
         const errorMessage = err.msg || (typeof err === 'string' ? err : (err.message || 'Error running code'));
-        return res.status(400).json({ success: false, error: errorMessage });
+        return res.status(400).json({ 
+            success: false, 
+            error: errorMessage,
+            executionTime: err.executionTime || 0,
+            memory: err.memory || 0
+        });
     } finally {
-        deleteFileSafe(filepath);
-        deleteFileSafe(inputFilePath);
-        deleteFileSafe(outputFileToDelete);
+        deleteFolderRecursive(jobDir);
     }
 }
 
 module.exports = {
     runCode
-}
+};

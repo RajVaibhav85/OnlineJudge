@@ -67,8 +67,9 @@ const getProblems = async (req, res) => {
         if (search) {
             query.name = { $regex: search, $options: 'i' }; 
         }
+        // ENHANCEMENT: Added 'description' to fields selection
         const problems = await Problem.find(query)
-            .select('name code difficulty tags createdAt')
+            .select('name code difficulty description tags createdAt')
             .sort({ createdAt: -1 });
         return res.status(200).json({
             success: true,

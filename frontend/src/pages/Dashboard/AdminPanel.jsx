@@ -5,25 +5,128 @@ import { useAuth } from '../../components/AuthContext'
 const BACKEND_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:5000';
 const AVAILABLE_TAGS = ['Array', 'String', 'Hash Table', 'Dynamic Programming', 'Math', 'Sorting', 'Greedy', 'Tree', 'Graph'];
 
+// Premium Glassmorphic Dark UI Design System
 const s = {
-  page: { minHeight: '100vh', background: '#f5f5f5', fontFamily: 'system-ui, sans-serif' },
-  nav: { background: '#fff', borderBottom: '0.5px solid #e0e0e0', padding: '0 2rem', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
-  navTitle: { fontSize: '16px', fontWeight: '500', color: '#111', margin: 0 },
-  btn: { background: '#111', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 14px', fontSize: '13px', cursor: 'pointer' },
-  main: { maxWidth: '1000px', margin: '0 auto', padding: '2rem 1rem' },
-  card: { background: '#fff', border: '0.5px solid #e0e0e0', borderRadius: '10px', padding: '1.25rem', marginBottom: '1.5rem' },
-  cardTitle: { fontSize: '16px', fontWeight: '600', color: '#111', margin: '0 0 1.25rem' },
-  grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' },
+  page: { 
+    minHeight: '100vh', 
+    background: 'radial-gradient(circle at 50% 0%, #111827 0%, #030712 100%)', 
+    fontFamily: 'Inter, system-ui, -apple-system, sans-serif', 
+    color: '#f3f4f6',
+    letterSpacing: '-0.01em'
+  },
+  nav: { 
+    background: 'rgba(17, 24, 39, 0.65)', 
+    backdropFilter: 'blur(16px)',
+    WebkitBackdropFilter: 'blur(16px)',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.06)', 
+    padding: '0 2.5rem', 
+    height: '70px', 
+    display: 'flex', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    position: 'sticky', 
+    top: 0, 
+    zIndex: 50 
+  },
+  navTitle: { 
+    fontSize: '16px', 
+    fontWeight: '600', 
+    color: '#f9fafb', 
+    margin: 0, 
+    display: 'flex', 
+    alignItems: 'center', 
+    gap: '10px',
+    letterSpacing: '-0.02em'
+  },
+  btn: { 
+    background: 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)', 
+    color: '#030712', 
+    border: 'none', 
+    borderRadius: '8px', 
+    padding: '10px 20px', 
+    fontSize: '13px', 
+    fontWeight: '600', 
+    cursor: 'pointer', 
+    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)', 
+    display: 'inline-flex', 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    boxShadow: '0 4px 14px 0 rgba(56, 189, 248, 0.3)'
+  },
+  btnSecondary: { 
+    background: 'rgba(255, 255, 255, 0.04)', 
+    border: '1px solid rgba(255, 255, 255, 0.08)', 
+    color: '#e5e7eb', 
+    borderRadius: '8px', 
+    padding: '10px 20px', 
+    fontSize: '13px', 
+    fontWeight: '500', 
+    cursor: 'pointer', 
+    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+    backdropFilter: 'blur(8px)',
+  },
+  main: { maxWidth: '1140px', margin: '0 auto', padding: '3rem 2rem' },
+  card: { 
+    background: 'rgba(31, 41, 55, 0.3)', 
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    border: '1px solid rgba(255, 255, 255, 0.07)', 
+    borderRadius: '16px', 
+    padding: '2.25rem', 
+    marginBottom: '2rem', 
+    boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.5), inset 0 1px 1px 0 rgba(255, 255, 255, 0.05)'
+  },
+  cardTitle: { fontSize: '18px', fontWeight: '600', color: '#f9fafb', margin: '0 0 1.75rem', letterSpacing: '-0.02em' },
+  grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' },
   fullWidth: { gridColumn: 'span 2' },
-  label: { display: 'block', fontSize: '13px', fontWeight: '500', color: '#444', marginBottom: '4px' },
-  input: { width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ccc', fontSize: '14px', boxSizing: 'border-box' },
-  textarea: { width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ccc', fontSize: '14px', minHeight: '60px', boxSizing: 'border-box', fontFamily: 'inherit' },
-  select: { width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ccc', fontSize: '14px', background: '#fff' },
-  tagContainer: { display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' },
-  tagBadge: { fontSize: '12px', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', border: '1px solid #ddd' },
-  problemRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 0', borderBottom: '1px solid #f0f0f0' },
-  actionBtn: { padding: '4px 10px', fontSize: '12px', borderRadius: '4px', border: '1px solid #ddd', cursor: 'pointer', marginLeft: '6px', background: '#fff' },
-  testCaseRow: { background: '#fafafa', border: '1px solid #e5e5e5', borderRadius: '6px', padding: '10px', marginBottom: '8px' }
+  label: { display: 'block', fontSize: '13px', fontWeight: '500', color: '#9ca3af', marginBottom: '8px' },
+  input: { 
+    width: '100%', 
+    padding: '12px 16px', 
+    borderRadius: '10px', 
+    border: '1px solid rgba(255, 255, 255, 0.1)', 
+    fontSize: '14px', 
+    boxSizing: 'border-box', 
+    outline: 'none', 
+    transition: 'all 0.2s ease', 
+    background: 'rgba(17, 24, 39, 0.4)', 
+    color: '#f9fafb',
+    boxShadow: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)'
+  },
+  textarea: { 
+    width: '100%', 
+    padding: '12px 16px', 
+    borderRadius: '10px', 
+    border: '1px solid rgba(255, 255, 255, 0.1)', 
+    fontSize: '14px', 
+    minHeight: '100px', 
+    boxSizing: 'border-box', 
+    fontFamily: 'Fira Code, SFMono-Regular, JetBrains Mono, monospace', 
+    outline: 'none', 
+    transition: 'all 0.2s ease', 
+    background: 'rgba(17, 24, 39, 0.4)', 
+    color: '#f9fafb', 
+    resize: 'vertical',
+    boxShadow: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)'
+  },
+  select: { 
+    width: '100%', 
+    padding: '12px 16px', 
+    borderRadius: '10px', 
+    border: '1px solid rgba(255, 255, 255, 0.1)', 
+    fontSize: '14px', 
+    background: 'rgba(17, 24, 39, 0.5) url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%239ca3af\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e") no-repeat right 14px center/18px', 
+    appearance: 'none', 
+    color: '#f9fafb', 
+    cursor: 'pointer',
+    outline: 'none',
+    transition: 'all 0.2s ease'
+  },
+  tagContainer: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' },
+  tagBadge: { fontSize: '12px', fontWeight: '500', padding: '6px 14px', borderRadius: '20px', cursor: 'pointer', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)' },
+  problemRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 0', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' },
+  actionBtn: { padding: '8px 14px', fontSize: '12px', fontWeight: '600', borderRadius: '8px', border: '1px solid transparent', cursor: 'pointer', marginLeft: '8px', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)' },
+  testCaseRow: { background: 'rgba(17, 24, 39, 0.3)', border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: '12px', padding: '16px', marginBottom: '12px' }
 }
 
 export default function AdminPanel() {
@@ -35,13 +138,11 @@ export default function AdminPanel() {
   const [isEditing, setIsEditing] = useState(false)
   const [message, setMessage] = useState({ text: '', error: false })
 
-  // Problem Form State
   const [form, setForm] = useState({
     name: '', code: '', difficulty: 'Easy', statement: '', description: '',
     sampleInput: '', sampleOutput: '', constraints: '', tags: []
   })
 
-  // --- TEST CASE CRUD STATES ---
   const [selectedProblemCode, setSelectedProblemCode] = useState(null)
   const [testCases, setTestCases] = useState([])
   const [isEditingTestCaseId, setIsEditingTestCaseId] = useState(null)
@@ -132,7 +233,6 @@ export default function AdminPanel() {
     } catch (err) { console.error(err) }
   }
 
-  // --- READ TEST CASES ---
   const handleManageTestCases = async (code) => {
     setSelectedProblemCode(code)
     setIsEditingTestCaseId(null)
@@ -141,13 +241,11 @@ export default function AdminPanel() {
       const res = await fetch(`${BACKEND_URL}/api/db/get-testcases/${code}`)
       const data = await res.json()
       if (res.ok) {
-        // Safe check to verify data structure matching database schema returns
         setTestCases(Array.isArray(data) ? data : data.data || [])
       }
     } catch (err) { console.error(err) }
   }
 
-  // --- CREATE & UPDATE TEST CASES ---
   const handleTestCaseSubmit = async (e) => {
     e.preventDefault()
     if (!selectedProblemCode) return
@@ -158,7 +256,6 @@ export default function AdminPanel() {
       : `${BACKEND_URL}/api/db/insert-testcases/${selectedProblemCode}`;
     
     const method = isUpdating ? 'PUT' : 'POST';
-    // Back-end maps array payload for insert: { testCases: [...] }
     const payload = isUpdating ? tcForm : { testCases: [tcForm] };
 
     try {
@@ -170,12 +267,11 @@ export default function AdminPanel() {
       if (res.ok) {
         setTcForm({ input: '', output: '', isHidden: false })
         setIsEditingTestCaseId(null)
-        handleManageTestCases(selectedProblemCode) // Refresh list
+        handleManageTestCases(selectedProblemCode)
       }
     } catch (err) { console.error(err) }
   }
 
-  // --- PRE-FILL FOR UPDATE ---
   const startTestCaseEdit = (tc) => {
     setIsEditingTestCaseId(tc._id)
     setTcForm({
@@ -185,81 +281,251 @@ export default function AdminPanel() {
     })
   }
 
-  // --- DELETE TEST CASE ---
   const handleTestCaseDelete = async (id) => {
     if (!window.confirm("Delete this testcase instance?")) return
     try {
       const res = await fetch(`${BACKEND_URL}/api/db/delete-testcase/${id}`, { method: 'DELETE' })
       if (res.ok) {
-        handleManageTestCases(selectedProblemCode) // Refresh list
+        handleManageTestCases(selectedProblemCode)
       }
     } catch (err) { console.error(err) }
   }
 
-  if (loading || !user || user.role !== 'admin') return <div style={{ padding: '40px', color: '#888' }}>Checking credentials...</div>
+  if (loading || !user || user.role !== 'admin') {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#030712', color: '#9ca3af', fontSize: '14px', fontFamily: 'sans-serif' }}>
+        Verifying secure administrative privileges...
+      </div>
+    )
+  }
 
   return (
     <div style={s.page}>
       <nav style={s.nav}>
-        <p style={s.navTitle}>⚙️ Admin Problem Repository Core</p>
-        <button style={s.btn} onClick={() => navigate(`/${user.username}`)}>Back to Dashboard</button>
+        <p style={s.navTitle}>
+          <span style={{ color: '#38bdf8', filter: 'drop-shadow(0 0 8px rgba(56,189,248,0.5))' }}>⚙️</span> Core Repository Panel
+        </p>
+        <button 
+          style={s.btnSecondary} 
+          onClick={() => navigate(`/${user.username}`)}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
+            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+          }}
+        >
+          Back to Dashboard
+        </button>
       </nav>
 
       <main style={s.main}>
         {message.text && (
-          <div style={{ ...s.card, background: message.error ? '#fee2e2' : '#d1fae5', color: message.error ? '#dc2626' : '#047857', fontWeight: '500' }}>
+          <div style={{ 
+            padding: '14px 20px', 
+            borderRadius: '12px', 
+            marginBottom: '2rem', 
+            fontSize: '14px',
+            fontWeight: '500', 
+            background: message.error ? 'rgba(127, 29, 29, 0.4)' : 'rgba(6, 78, 59, 0.4)', 
+            color: message.error ? '#fca5a5' : '#6ee7b7',
+            border: `1px solid ${message.error ? 'rgba(239, 68, 68, 0.3)' : 'rgba(52, 211, 153, 0.3)'}`,
+            backdropFilter: 'blur(8px)',
+            boxShadow: '0 10px 20px -5px rgba(0,0,0,0.3)'
+          }}>
             {message.text}
           </div>
         )}
 
         {/* Problem Creation/Editing Section */}
         <div style={s.card}>
-          <p style={s.cardTitle}>{isEditing ? "📝 Modify Existing Challenge Settings" : "➕ Register New Code Challenge"}</p>
+          <p style={s.cardTitle}>{isEditing ? "📝 Modify Challenge Settings" : "➕ Register New Code Challenge"}</p>
           <form onSubmit={handleSubmit}>
             <div style={s.grid}>
               <div>
                 <label style={s.label}>Challenge Name *</label>
-                <input style={s.input} name="name" value={form.name} onChange={handleInputChange} required />
+                <input 
+                  style={s.input} 
+                  name="name" 
+                  value={form.name} 
+                  onChange={handleInputChange} 
+                  required 
+                  onFocus={e => {
+                    e.target.style.borderColor = '#38bdf8';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(56, 189, 248, 0.15), inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
+                  }}
+                  onBlur={e => {
+                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    e.target.style.boxShadow = 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
+                  }}
+                />
               </div>
               <div>
                 <label style={s.label}>URL Slug Code *</label>
-                <input style={s.input} name="code" value={form.code} onChange={handleInputChange} required disabled={isEditing} />
+                <input 
+                  style={{ 
+                    ...s.input, 
+                    background: isEditing ? 'rgba(255,255,255,0.02)' : 'rgba(17, 24, 39, 0.4)', 
+                    cursor: isEditing ? 'not-allowed' : 'text', 
+                    color: isEditing ? '#6b7280' : '#f9fafb',
+                    borderColor: isEditing ? 'rgba(255,255,255,0.03)' : 'rgba(255, 255, 255, 0.1)'
+                  }} 
+                  name="code" 
+                  value={form.code} 
+                  onChange={handleInputChange} 
+                  required 
+                  disabled={isEditing} 
+                  onFocus={e => {
+                    if (!isEditing) {
+                      e.target.style.borderColor = '#38bdf8';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(56, 189, 248, 0.15), inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
+                    }
+                  }}
+                  onBlur={e => {
+                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    e.target.style.boxShadow = 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
+                  }}
+                />
               </div>
               <div style={s.fullWidth}>
                 <label style={s.label}>Problem Statement *</label>
-                <textarea style={s.textarea} name="statement" value={form.statement} onChange={handleInputChange} required />
+                <textarea 
+                  style={{ ...s.textarea, fontFamily: 'inherit', minHeight: '90px' }} 
+                  name="statement" 
+                  value={form.statement} 
+                  onChange={handleInputChange} 
+                  required 
+                  placeholder="Describe the algorithmic puzzle task rules..."
+                  onFocus={e => {
+                    e.target.style.borderColor = '#38bdf8';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(56, 189, 248, 0.15), inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
+                  }}
+                  onBlur={e => {
+                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    e.target.style.boxShadow = 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
+                  }}
+                />
               </div>
               <div style={s.fullWidth}>
                 <label style={s.label}>Short Description</label>
-                <textarea style={s.textarea} name="description" value={form.description} onChange={handleInputChange} />
+                <textarea 
+                  style={{ ...s.textarea, fontFamily: 'inherit', minHeight: '70px' }} 
+                  name="description" 
+                  value={form.description} 
+                  onChange={handleInputChange} 
+                  placeholder="Brief high-level description summary..."
+                  onFocus={e => {
+                    e.target.style.borderColor = '#38bdf8';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(56, 189, 248, 0.15), inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
+                  }}
+                  onBlur={e => {
+                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    e.target.style.boxShadow = 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
+                  }}
+                />
               </div>
               <div>
                 <label style={s.label}>Difficulty Ranking *</label>
-                <select style={s.select} name="difficulty" value={form.difficulty} onChange={handleInputChange}>
-                  <option value="Easy">Easy</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Hard">Hard</option>
+                <select 
+                  style={s.select} 
+                  name="difficulty" 
+                  value={form.difficulty} 
+                  onChange={handleInputChange}
+                  onFocus={e => e.target.style.borderColor = '#38bdf8'}
+                  onBlur={e => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+                >
+                  <option value="Easy" style={{background: '#111827'}}>Easy</option>
+                  <option value="Medium" style={{background: '#111827'}}>Medium</option>
+                  <option value="Hard" style={{background: '#111827'}}>Hard</option>
                 </select>
               </div>
               <div>
                 <label style={s.label}>Constraints Mapping</label>
-                <input style={s.input} name="constraints" value={form.constraints} onChange={handleInputChange} />
+                <input 
+                  style={s.input} 
+                  name="constraints" 
+                  value={form.constraints} 
+                  onChange={handleInputChange} 
+                  placeholder="e.g., 1 <= N <= 10^5"
+                  onFocus={e => {
+                    e.target.style.borderColor = '#38bdf8';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(56, 189, 248, 0.15), inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
+                  }}
+                  onBlur={e => {
+                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    e.target.style.boxShadow = 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
+                  }}
+                />
+              </div>
+              
+              <div>
+                <label style={s.label}>Sample Input (Multiline)</label>
+                <textarea 
+                  style={s.textarea} 
+                  name="sampleInput" 
+                  value={form.sampleInput} 
+                  onChange={handleInputChange} 
+                  placeholder="Paste multi-line matrix strings here..."
+                  onFocus={e => {
+                    e.target.style.borderColor = '#38bdf8';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(56, 189, 248, 0.15), inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
+                  }}
+                  onBlur={e => {
+                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    e.target.style.boxShadow = 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
+                  }}
+                />
               </div>
               <div>
-                <label style={s.label}>Sample Input</label>
-                <input style={s.input} name="sampleInput" value={form.sampleInput} onChange={handleInputChange} />
+                <label style={s.label}>Sample Output (Multiline)</label>
+                <textarea 
+                  style={s.textarea} 
+                  name="sampleOutput" 
+                  value={form.sampleOutput} 
+                  onChange={handleInputChange} 
+                  placeholder="Paste matching multi-line system answers..."
+                  onFocus={e => {
+                    e.target.style.borderColor = '#38bdf8';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(56, 189, 248, 0.15), inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
+                  }}
+                  onBlur={e => {
+                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    e.target.style.boxShadow = 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)';
+                  }}
+                />
               </div>
-              <div>
-                <label style={s.label}>Sample Output</label>
-                <input style={s.input} name="sampleOutput" value={form.sampleOutput} onChange={handleInputChange} />
-              </div>
+
               <div style={s.fullWidth}>
                 <label style={s.label}>Select Tags Hierarchy</label>
                 <div style={s.tagContainer}>
                   {AVAILABLE_TAGS.map(tag => {
                     const isSelected = Array.isArray(form.tags) && form.tags.includes(tag);
                     return (
-                      <span key={tag} style={{ ...s.tagBadge, background: isSelected ? '#111' : '#fff', color: isSelected ? '#fff' : '#111' }} onClick={() => handleTagToggle(tag)}>
+                      <span 
+                        key={tag} 
+                        style={{ 
+                          ...s.tagBadge, 
+                          background: isSelected ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.03)', 
+                          color: isSelected ? '#38bdf8' : '#9ca3af',
+                          border: isSelected ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.08)',
+                          boxShadow: isSelected ? '0 0 12px 0 rgba(56, 189, 248, 0.2)' : 'none'
+                        }} 
+                        onClick={() => handleTagToggle(tag)}
+                        onMouseEnter={e => {
+                          if (!isSelected) {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                            e.currentTarget.style.color = '#f9fafb';
+                          }
+                        }}
+                        onMouseLeave={e => {
+                          if (!isSelected) {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                            e.currentTarget.style.color = '#9ca3af';
+                          }
+                        }}
+                      >
                         {tag}
                       </span>
                     )
@@ -267,27 +533,71 @@ export default function AdminPanel() {
                 </div>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button type="submit" style={s.btn}>{isEditing ? "Save Parameters" : "Create Registry"}</button>
-              {isEditing && <button type="button" style={{ ...s.btn, background: '#fff', border: '1px solid #ccc', color: '#111' }} onClick={clearForm}>Cancel</button>}
+            <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+              <button 
+                type="submit" 
+                style={s.btn}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px 0 rgba(56, 189, 248, 0.4)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 14px 0 rgba(56, 189, 248, 0.3)';
+                }}
+              >
+                {isEditing ? "Save Parameters" : "Create Registry"}
+              </button>
+              {isEditing && (
+                <button 
+                  type="button" 
+                  style={s.btnSecondary} 
+                  onClick={clearForm}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'}
+                >
+                  Cancel
+                </button>
+              )}
             </div>
           </form>
         </div>
 
-        {/* Existing Problem Database Inventory */}
+        {/* Challenge Inventory List Database */}
         <div style={s.card}>
-          <p style={s.cardTitle}>📦 Existing Challenge Database Inventory ({problems.length})</p>
-          <div>
+          <p style={s.cardTitle}>📦 Challenge Inventory Grid ({problems.length})</p>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
             {problems.map(p => (
               <div key={p.code} style={s.problemRow}>
                 <div>
-                  <strong style={{ color: '#111', fontSize: '14px' }}>{p.name}</strong>
-                  <span style={{ fontSize: '12px', color: '#666', marginLeft: '8px' }}>({p.code})</span>
+                  <strong style={{ color: '#f9fafb', fontSize: '14px', fontWeight: '500' }}>{p.name}</strong>
+                  <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '10px', fontFamily: 'Fira Code, monospace', background: 'rgba(255,255,255,0.03)', padding: '2px 6px', borderRadius: '4px' }}>{p.code}</span>
                 </div>
-                <div>
-                  <button style={{ ...s.actionBtn, color: '#059669', borderColor: '#a7f3d0' }} onClick={() => handleManageTestCases(p.code)}>Test Cases</button>
-                  <button style={{ ...s.actionBtn, color: '#2563eb' }} onClick={() => handleEditSelect(p.code)}>Edit</button>
-                  <button style={{ ...s.actionBtn, color: '#dc2626' }} onClick={() => handleDelete(p.code)}>Delete</button>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <button 
+                    style={{ ...s.actionBtn, color: '#34d399', borderColor: 'rgba(52, 211, 153, 0.2)', background: 'rgba(6, 78, 59, 0.2)' }} 
+                    onClick={() => handleManageTestCases(p.code)}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(6, 78, 59, 0.4)'; e.currentTarget.style.borderColor = '#34d399'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(6, 78, 59, 0.2)'; e.currentTarget.style.borderColor = 'rgba(52, 211, 153, 0.2)'; }}
+                  >
+                    Test Cases
+                  </button>
+                  <button 
+                    style={{ ...s.actionBtn, color: '#60a5fa', borderColor: 'rgba(96, 165, 250, 0.2)', background: 'rgba(30, 58, 138, 0.2)' }} 
+                    onClick={() => handleEditSelect(p.code)}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(30, 58, 138, 0.4)'; e.currentTarget.style.borderColor = '#60a5fa'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(30, 58, 138, 0.2)'; e.currentTarget.style.borderColor = 'rgba(96, 165, 250, 0.2)'; }}
+                  >
+                    Edit
+                  </button>
+                  <button 
+                    style={{ ...s.actionBtn, color: '#f87171', borderColor: 'rgba(248, 113, 113, 0.2)', background: 'rgba(127, 29, 29, 0.2)' }} 
+                    onClick={() => handleDelete(p.code)}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(127, 29, 29, 0.4)'; e.currentTarget.style.borderColor = '#f87171'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(127, 29, 29, 0.2)'; e.currentTarget.style.borderColor = 'rgba(248, 113, 113, 0.2)'; }}
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
             ))}
@@ -296,55 +606,86 @@ export default function AdminPanel() {
 
         {/* --- DYNAMIC TEST CASES CRUD PANEL --- */}
         {selectedProblemCode && (
-          <div style={{ ...s.card, borderTop: '4px solid #111' }}>
-            <p style={{ ...s.cardTitle, marginBottom: '4px' }}>🧪 Test Cases Matrix for: <span style={{color: '#2563eb'}}>{selectedProblemCode}</span></p>
-            <p style={{ fontSize: '12px', color: '#666', marginBottom: '20px' }}>Perform full management mutations directly against production models.</p>
+          <div style={{ ...s.card, borderTop: '3px solid #38bdf8', borderTopLeftRadius: '6px', borderTopRightRadius: '6px' }}>
+            <p style={{ ...s.cardTitle, marginBottom: '6px' }}>🧪 Test Cases Matrix for: <span style={{color: '#38bdf8', fontFamily: 'Fira Code, monospace', fontWeight: '500'}}>{selectedProblemCode}</span></p>
+            <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '24px' }}>Perform full management modifications directly against active records.</p>
 
             {/* Create / Edit Form */}
-            <form onSubmit={handleTestCaseSubmit} style={{ marginBottom: '24px', background: '#f8fafc', padding: '15px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-              <p style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 10px 0' }}>{isEditingTestCaseId ? "✏️ Edit Target Test Case" : "➕ Append New Test Case Node"}</p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+            <form onSubmit={handleTestCaseSubmit} style={{ marginBottom: '2rem', background: 'rgba(17, 24, 39, 0.3)', padding: '24px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+              <p style={{ fontSize: '12px', fontWeight: '700', letterSpacing: '0.05em', textTransform: 'uppercase', color: '#9ca3af', margin: '0 0 16px 0' }}>
+                {isEditingTestCaseId ? "✏️ Edit Target Test Case" : "➕ Append New Test Case Node"}
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
                 <div>
                   <label style={s.label}>Input Stream Data</label>
-                  <textarea style={s.textarea} value={tcForm.input} onChange={e => setTcForm({...tcForm, input: e.target.value})} required placeholder="Input data parameters..."/>
+                  <textarea 
+                    style={{...s.textarea, background: 'rgba(17, 24, 39, 0.5)'}} 
+                    value={tcForm.input} 
+                    onChange={e => setTcForm({...tcForm, input: e.target.value})} 
+                    required 
+                    placeholder="Provide multiline input stream..."
+                    onFocus={e => { e.target.style.borderColor = '#38bdf8'; }}
+                    onBlur={e => { e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'; }}
+                  />
                 </div>
                 <div>
                   <label style={s.label}>Expected Output Match</label>
-                  <textarea style={s.textarea} value={tcForm.output} onChange={e => setTcForm({...tcForm, output: e.target.value})} required placeholder="Expected output match..."/>
+                  <textarea 
+                    style={{...s.textarea, background: 'rgba(17, 24, 39, 0.5)'}} 
+                    value={tcForm.output} 
+                    onChange={e => setTcForm({...tcForm, output: e.target.value})} 
+                    required 
+                    placeholder="Provide expected matching output..."
+                    onFocus={e => { e.target.style.borderColor = '#38bdf8'; }}
+                    onBlur={e => { e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'; }}
+                  />
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={tcForm.isHidden} onChange={e => setTcForm({...tcForm, isHidden: e.target.checked})}/>
-                  Flag as Hidden (Secret Evaluation Test Case)
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: '#d1d5db', cursor: 'pointer', userSelect: 'none' }}>
+                  <input type="checkbox" checked={tcForm.isHidden} onChange={e => setTcForm({...tcForm, isHidden: e.target.checked})} style={{ width: '16px', height: '16px', accentColor: '#38bdf8', cursor: 'pointer' }}/>
+                  Flag as Hidden (Secret System Evaluation Case)
                 </label>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <button type="submit" style={{ ...s.btn, background: '#2563eb' }}>{isEditingTestCaseId ? "Update Case" : "Push Case Entry"}</button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button 
+                    type="submit" 
+                    style={{ ...s.btn, background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', color: '#ffffff', boxShadow: '0 4px 14px 0 rgba(37, 99, 235, 0.3)' }}
+                    onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 6px 18px 0 rgba(37, 99, 235, 0.4)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 4px 14px 0 rgba(37, 99, 235, 0.3)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                  >
+                    {isEditingTestCaseId ? "Update Case" : "Push Case Entry"}
+                  </button>
                   {isEditingTestCaseId && (
-                    <button type="button" style={{ ...s.btn, background: '#fff', border: '1px solid #ccc', color: '#111' }} onClick={() => { setIsEditingTestCaseId(null); setTcForm({ input: '', output: '', isHidden: false }) }}>Cancel</button>
+                    <button type="button" style={s.btnSecondary} onClick={() => { setIsEditingTestCaseId(null); setTcForm({ input: '', output: '', isHidden: false }) }}>
+                      Cancel
+                    </button>
                   )}
                 </div>
               </div>
             </form>
 
-            {/* List Array (Read Node instances) */}
+            {/* List Array */}
             <div>
-              <p style={{ fontSize: '14px', fontWeight: '500', marginBottom: '10px' }}>Active Instances Array ({testCases.length})</p>
+              <p style={{ fontSize: '14px', fontWeight: '600', color: '#e5e7eb', marginBottom: '16px' }}>Active Instances Array ({testCases.length})</p>
               {testCases.length === 0 ? (
-                <p style={{ fontSize: '13px', color: '#888', padding: '10px 0' }}>No active test cases compiled for this problem slug yet.</p>
+                <p style={{ fontSize: '13px', color: '#6b7280', padding: '24px 0', textAlign: 'center', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '12px' }}>
+                  No active test cases compiled for this problem slug yet.
+                </p>
               ) : (
                 testCases.map((tc, index) => (
                   <div key={tc._id || index} style={s.testCaseRow}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                      <span style={{ fontSize: '12px', fontWeight: '600', color: '#444' }}>Case #{index + 1} {tc.isHidden ? '👁️‍🗨️ (Hidden)' : '🌍 (Public)'}</span>
-                      <div>
-                        <button style={{ ...s.actionBtn, margin: 0, padding: '2px 8px', color: '#2563eb' }} onClick={() => startTestCaseEdit(tc)}>Modify</button>
-                        <button style={{ ...s.actionBtn, marginLeft: '4px', padding: '2px 8px', color: '#dc2626' }} onClick={() => handleTestCaseDelete(tc._id)}>Purge</button>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: '600', color: tc.isHidden ? '#a78bfa' : '#38bdf8', background: tc.isHidden ? 'rgba(88, 28, 135, 0.3)' : 'rgba(7, 89, 133, 0.3)', padding: '4px 10px', borderRadius: '6px', border: `1px solid ${tc.isHidden ? 'rgba(167, 139, 250, 0.2)' : 'rgba(56, 189, 248, 0.2)'}` }}>
+                        Case #{index + 1} {tc.isHidden ? '👁️‍🗨️ (Hidden)' : '🌍 (Public)'}
+                      </span>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <button style={{ ...s.actionBtn, margin: 0, padding: '4px 10px', color: '#60a5fa', background: 'transparent' }} onClick={() => startTestCaseEdit(tc)}>Modify</button>
+                        <button style={{ ...s.actionBtn, margin: 0, padding: '4px 10px', color: '#f87171', background: 'transparent' }} onClick={() => handleTestCaseDelete(tc._id)}>Purge</button>
                       </div>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '12px', fontFamily: 'monospace', background: '#fff', padding: '6px', borderRadius: '4px', border: '1px solid #e5e5e5' }}>
-                      <div><strong>In:</strong> {tc.input}</div>
-                      <div><strong>Out:</strong> {tc.output}</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '13px', fontFamily: 'Fira Code, monospace', background: 'rgba(17, 24, 39, 0.5)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)', color: '#d1d5db' }}>
+                      <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}><strong style={{ color: '#4b5563', display: 'block', marginBottom: '4px' }}>In:</strong>{tc.input}</div>
+                      <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}><strong style={{ color: '#4b5563', display: 'block', marginBottom: '4px' }}>Out:</strong>{tc.output}</div>
                     </div>
                   </div>
                 ))

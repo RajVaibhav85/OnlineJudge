@@ -28,7 +28,6 @@ export default function Coder() {
     const rightPanelRef = useRef(null);
     const editorRef = useRef(null); 
 
-    // Session Context Management State
     const [userContext, setUserContext] = useState(null);
     const [problem, setProblem] = useState(null);
     const [testCases, setTestCases] = useState([]);
@@ -63,95 +62,82 @@ export default function Coder() {
         return typeof dataBlock === 'string' ? dataBlock : JSON.stringify(dataBlock, null, 2);
     };
 
-    // Consolidated Workspace Data Synchronization Pipeline
-    // Workspace Pipeline: Triggered on initial load, language modifications, or manual refresh
-useEffect(() => {
-    let isMounted = true;
-    setFetchingData(true);
+    useEffect(() => {
+        let isMounted = true;
+        setFetchingData(true);
 
-    const syncWorkspaceSessionData = async () => {
-        try {
-            // 1. Fetch User details from /api/auth/me via HTTP-Only Cookies
-            let currentUserProfile = userContext;
-            if (!currentUserProfile) {
-                const profileRes = await fetch(`${AUTH_API}/me`, {
+        const syncWorkspaceSessionData = async () => {
+            try {
+                let currentUserProfile = userContext;
+                if (!currentUserProfile) {
+                    const profileRes = await fetch(`${AUTH_API}/me`, {
+                        method: 'GET',
+                        credentials: 'include'
+                    });
+                    if (!profileRes.ok) throw new Error('User session context unauthorized.');
+                    currentUserProfile = await profileRes.json();
+                    if (isMounted) setUserContext(currentUserProfile);
+                }
+
+                const resolvedUserId = currentUserProfile._id || currentUserProfile.id;
+
+                const probRes = await fetch(`${DB_API}/get-problem/${problemCode}`);
+                if (!probRes.ok) throw new Error('Target matrix unreachable.');
+                const probData = await probRes.json();
+
+                const tcRes = await fetch(`${DB_API}/get-testcases/${problemCode}`);
+                const tcData = await tcRes.json();
+
+                if (!isMounted) return;
+                setProblem(probData);
+                setTestCases(Array.isArray(tcData) ? tcData : (tcData.data || []));
+
+                if (probData?.sampleInput) {
+                    setCustomInput(typeof probData.sampleInput === 'string' ? probData.sampleInput : JSON.stringify(probData.sampleInput));
+                }
+
+                const submissionRes = await fetch(`${DB_API}/latest-submission/${resolvedUserId}/${probData._id}`, {
                     method: 'GET',
                     credentials: 'include'
                 });
-                if (!profileRes.ok) throw new Error('User session context unauthorized.');
-                currentUserProfile = await profileRes.json();
-                if (isMounted) setUserContext(currentUserProfile);
-            }
 
-            const resolvedUserId = currentUserProfile._id || currentUserProfile.id;
-
-            // 2. Fetch Target Challenge Metadata Specifications
-            const probRes = await fetch(`${DB_API}/get-problem/${problemCode}`);
-            if (!probRes.ok) throw new Error('Target matrix unreachable.');
-            const probData = await probRes.json();
-
-            // 3. Fetch Problem Evaluation Assertions
-            const tcRes = await fetch(`${DB_API}/get-testcases/${problemCode}`);
-            const tcData = await tcRes.json();
-
-            if (!isMounted) return;
-            setProblem(probData);
-            setTestCases(Array.isArray(tcData) ? tcData : (tcData.data || []));
-
-            if (probData?.sampleInput) {
-                setCustomInput(typeof probData.sampleInput === 'string' ? probData.sampleInput : JSON.stringify(probData.sampleInput));
-            }
-
-            // 4. FIX: Accurate route syntax matching your dbRoutes backend structure
-            // GET /api/db/latest-submission/:userId/:problemId
-            const submissionRes = await fetch(`${DB_API}/latest-submission/${resolvedUserId}/${probData._id}`, {
-                method: 'GET',
-                credentials: 'include'
-            });
-
-            if (submissionRes.ok) {
-                const resJson = await submissionRes.json();
-                
-                // If your backend returns an array or an object wrapped inside 'data'
-                if (resJson.success && resJson.data) {
-                    const targetBackendLanguage = languageMapping.toBackend[language]; // e.g., "C++"
-                    
-                    let matchingSubmission = null;
-                    
-                    if (Array.isArray(resJson.data)) {
-                        // If it returns a list of submissions, find the one matching the current language tab
-                        matchingSubmission = resJson.data.find(sub => sub.language === targetBackendLanguage);
-                    } else if (resJson.data.language === targetBackendLanguage) {
-                        // If it returns a single snapshot object, check if it matches the current tab language
-                        matchingSubmission = resJson.data;
-                    }
-
-                    if (matchingSubmission && matchingSubmission.code) {
-                        setCodeCache(prev => ({ ...prev, [language]: matchingSubmission.code }));
-                        if (editorRef.current) {
-                            editorRef.current.setValue(matchingSubmission.code);
+                if (submissionRes.ok) {
+                    const resJson = await submissionRes.json();
+                    if (resJson.success && resJson.data) {
+                        const targetBackendLanguage = languageMapping.toBackend[language];
+                        let matchingSubmission = null;
+                        
+                        if (Array.isArray(resJson.data)) {
+                            matchingSubmission = resJson.data.find(sub => sub.language === targetBackendLanguage);
+                        } else if (resJson.data.language === targetBackendLanguage) {
+                            matchingSubmission = resJson.data;
                         }
-                        return;
+
+                        if (matchingSubmission && matchingSubmission.code) {
+                            setCodeCache(prev => ({ ...prev, [language]: matchingSubmission.code }));
+                            if (editorRef.current) {
+                                editorRef.current.setValue(matchingSubmission.code);
+                            }
+                            return;
+                        }
                     }
                 }
+
+                if (editorRef.current) {
+                    editorRef.current.setValue(codeCache[language] || boilerplates[language]);
+                }
+
+            } catch (err) {
+                console.error("Workspace synchronization sequence fault:", err);
+                if (isMounted) navigate('/login');
+            } finally {
+                if (isMounted) setFetchingData(false);
             }
+        };
 
-            // Default behavior fallback: render clean boilerplate if no history exists for this specific language tab
-            if (editorRef.current) {
-                editorRef.current.setValue(codeCache[language] || boilerplates[language]);
-            }
-
-        } catch (err) {
-            console.error("Workspace synchronization sequence fault:", err);
-            if (isMounted) navigate('/login');
-        } finally {
-            if (isMounted) setFetchingData(false);
-        }
-    };
-
-    syncWorkspaceSessionData();
-    return () => { isMounted = false; };
-}, [problemCode, language, navigate]); // Triggers smoothly when switching language tabs to sync user progress
+        syncWorkspaceSessionData();
+        return () => { isMounted = false; };
+    }, [problemCode, language, navigate]);
 
     const handleEditorDidMount = (editor) => {
         editorRef.current = editor;
@@ -171,7 +157,6 @@ useEffect(() => {
         return codeCache[language];
     };
 
-    // Horizontal Split Drag Calculator
     const startHorizontalResize = (e) => {
         e.preventDefault();
         const startX = e.clientX;
@@ -191,7 +176,6 @@ useEffect(() => {
         window.addEventListener('mouseup', stopHorizontalResize);
     };
 
-    // Vertical Split Drag Calculator
     const startVerticalResize = (e) => {
         e.preventDefault();
         const startY = e.clientY;
@@ -225,6 +209,10 @@ useEffect(() => {
                 credentials: 'include'
             });
             const data = await response.json();
+            
+            // Demo logging for dynamic single-runs
+            console.log("➡️ Custom Run API Response Payload:", data);
+
             if (response.ok) {
                 setCustomOutput(data.output || "Execution sequence closed with empty buffer stream outputs.");
             } else {
@@ -254,6 +242,10 @@ useEffect(() => {
 
         const activeCodeBuffer = getActiveCode();
 
+        // New metric aggregators to identify peak load metrics over all tests
+        let maxTimeSpent = 0;
+        let maxMemoryConsumed = 0;
+
         try {
             const tasks = targets.map(async (tc, idx) => {
                 try {
@@ -264,6 +256,18 @@ useEffect(() => {
                         credentials: 'include'
                     });
                     const data = await response.json();
+                    
+                    // Demo Logging: View single test case container stats
+                    console.log(`📊 Test Case [Index: ${idx}] Sandbox Metrics:`, {
+                        time: data.executionTime,
+                        memory: data.memory,
+                        success: response.ok
+                    });
+
+                    // Track maximum peak metrics dynamically
+                    if (data.executionTime > maxTimeSpent) maxTimeSpent = data.executionTime;
+                    if (data.memory > maxMemoryConsumed) maxMemoryConsumed = data.memory;
+
                     const matched = response.ok && (tc.output.trim() === (data.output || '').trim());
 
                     return {
@@ -273,7 +277,7 @@ useEffect(() => {
                         actualOutput: data.output || data.error || 'Blank Return Matrix',
                         isHidden: tc.isHidden,
                         passed: matched,
-                        diagnostics: response.ok ? 'Success' : 'Fault'
+                        diagnostics: response.ok ? `Success (${data.executionTime}ms)` : 'Fault'
                     };
                 } catch {
                     return { id: tc._id || idx, input: tc.input, expectedOutput: tc.output, actualOutput: 'Transport connection failure loops.', isHidden: tc.isHidden, passed: false, diagnostics: 'Disconnected' };
@@ -285,6 +289,13 @@ useEffect(() => {
 
             const errorsFound = outputs.some(item => !item.passed);
             const absoluteVerdict = errorsFound ? 'Wrong Answer' : 'Accepted';
+
+            // Demo Logging: Peak summary metrics gathered across all test bounds
+            console.log("🏁 Consolidated Test Suite Absolute Metrics Summary:", {
+                verdict: absoluteVerdict,
+                peakExecutionTime: `${maxTimeSpent}ms`,
+                peakMemoryConsumption: `${maxMemoryConsumed}MB`
+            });
 
             setVerdictMessage(
                 errorsFound 
@@ -313,13 +324,16 @@ useEffect(() => {
                 if (subRes.ok && subData.success) {
                     setCodeCache(prev => ({ ...prev, [language]: activeCodeBuffer }));
                     if (subData.data?._id) {
+                        
+                        console.log(`📤 Dispatching Dynamic Verdict Update for Solution ID: ${subData.data._id}`);
+
                         await fetch(`${DB_API}/update-solution-verdict/${subData.data._id}`, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 verdict: absoluteVerdict,
-                                executionTime: 18, 
-                                memory: 32,
+                                executionTime: maxTimeSpent,      // Replaced static 18 with true calculated value
+                                memory: maxMemoryConsumed,        // Replaced static 32 with true calculated value
                                 output: errorsFound ? 'Assertion mismatch trace metrics recorded.' : 'All compilation limits valid.'
                             }),
                             credentials: 'include'
@@ -359,70 +373,75 @@ useEffect(() => {
     };
 
     if (fetchingData) {
-        return <div style={{ background: '#121212', height: '100vh', color: '#6b7280', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13.5px' }}>Acquiring Context Profiles via Security Decoupled Handshakes...</div>;
+        return <div style={{ background: '#030712', height: '100vh', color: '#9ca3af', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontFamily: 'sans-serif' }}>Acquiring Context Profiles via Security Decoupled Handshakes...</div>;
     }
 
     return (
-        <div ref={containerRef} style={{ display: 'flex', height: '100vh', background: '#121212', color: '#fff', fontFamily: 'sans-serif', overflow: 'hidden' }}>
+        <div ref={containerRef} style={{ display: 'flex', height: '100vh', background: '#030712', color: '#f3f4f6', fontFamily: 'Inter, system-ui, sans-serif', overflow: 'hidden' }}>
             
             {/* Split Panel - Descriptions Framework Area */}
-            <div style={{ width: `${leftPanelWidth}%`, borderRight: '2px solid #262626', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', background: '#151515' }}>
-                <div style={{ padding: '15px 20px', borderBottom: '1px solid #262626', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <button onClick={() => navigate(`/${userContext?.username || ''}`)} style={{ background: 'none', border: '1px solid #444', color: '#aaa', padding: '5px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
+            <div style={{ width: `${leftPanelWidth}%`, borderRight: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', background: '#0b0f19' }}>
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(17, 24, 39, 0.2)' }}>
+                    <button 
+                        onClick={() => navigate(`/${userContext?.username || ''}`)} 
+                        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#9ca3af', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '500', transition: 'all 0.2s' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                    >
                         ← Dashboard ({userContext?.username || 'User'})
                     </button>
-                    <span style={{ fontSize: '11px', fontWeight: 'bold', background: '#2a2a2a', padding: '4px 8px', borderRadius: '4px', color: problem.difficulty === 'Easy' ? '#10b981' : '#f59e0b' }}>
+                    <span style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.05em', textTransform: 'uppercase', background: problem.difficulty === 'Easy' ? 'rgba(6, 78, 59, 0.4)' : 'rgba(120, 53, 15, 0.4)', padding: '4px 10px', borderRadius: '20px', color: problem.difficulty === 'Easy' ? '#34d399' : '#fbbf24', border: `1px solid ${problem.difficulty === 'Easy' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(251, 191, 36, 0.2)'}` }}>
                         {problem.difficulty || 'Medium'}
                     </span>
                 </div>
                 
-                <div style={{ padding: '25px 20px', overflowY: 'auto', flex: 1, lineHeight: '1.6' }}>
-                    <h1 style={{ margin: '0 0 12px 0', fontSize: '21px', letterSpacing: '-0.3px' }}>{problem.name || 'Untitled Problem'}</h1>
-                    <p style={{ color: '#e2e8f0', whiteSpace: 'pre-wrap', fontSize: '14px' }}>{problem.statement}</p>
+                <div style={{ padding: '2rem 1.5rem', overflowY: 'auto', flex: 1, lineHeight: '1.6' }}>
+                    <h1 style={{ margin: '0 0 16px 0', fontSize: '22px', fontWeight: '700', letterSpacing: '-0.02em', color: '#f9fafb' }}>{problem.name || 'Untitled Problem'}</h1>
+                    <p style={{ color: '#d1d5db', whiteSpace: 'pre-wrap', fontSize: '14px' }}>{problem.statement}</p>
                     
                     {problem.constraints && (
-                        <div style={{ marginTop: '20px' }}>
-                            <h4 style={{ color: '#ef4444', marginBottom: '6px', fontSize: '12px', textTransform: 'uppercase' }}>Constraints Profile</h4>
-                            <pre style={{ background: '#1e1e1e', padding: '10px', borderRadius: '6px', fontSize: '13px', margin: 0, whiteSpace: 'pre-wrap', border: '1px solid #2d2d2d', color: '#fca5a5' }}>{renderDataSafely(problem.constraints)}</pre>
+                        <div style={{ marginTop: '24px' }}>
+                            <h4 style={{ color: '#f87171', marginBottom: '8px', fontSize: '11px', fontWeight: '700', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Constraints Profile</h4>
+                            <pre style={{ background: 'rgba(17, 24, 39, 0.4)', padding: '12px 16px', borderRadius: '10px', fontSize: '13px', margin: 0, whiteSpace: 'pre-wrap', border: '1px solid rgba(248, 113, 113, 0.15)', color: '#fca5a5', fontFamily: 'Fira Code, monospace' }}>{renderDataSafely(problem.constraints)}</pre>
                         </div>
                     )}
 
                     {problem.sampleInput && (
-                        <div style={{ marginTop: '20px' }}>
-                            <h4 style={{ color: '#10b981', marginBottom: '6px', fontSize: '12px', textTransform: 'uppercase' }}>Sample Input Case</h4>
-                            <pre style={{ background: '#1e1e1e', padding: '10px', borderRadius: '6px', fontSize: '13px', margin: 0, whiteSpace: 'pre-wrap', border: '1px solid #2d2d2d' }}>{renderDataSafely(problem.sampleInput)}</pre>
+                        <div style={{ marginTop: '24px' }}>
+                            <h4 style={{ color: '#34d399', marginBottom: '8px', fontSize: '11px', fontWeight: '700', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Sample Input Case</h4>
+                            <pre style={{ background: 'rgba(17, 24, 39, 0.4)', padding: '12px 16px', borderRadius: '10px', fontSize: '13px', margin: 0, whiteSpace: 'pre-wrap', border: '1px solid rgba(52, 211, 153, 0.15)', color: '#e5e7eb', fontFamily: 'Fira Code, monospace' }}>{renderDataSafely(problem.sampleInput)}</pre>
                         </div>
                     )}
 
                     {problem.sampleOutput && (
-                        <div style={{ marginTop: '20px' }}>
-                            <h4 style={{ color: '#10b981', marginBottom: '6px', fontSize: '12px', textTransform: 'uppercase' }}>Sample Output Target</h4>
-                            <pre style={{ background: '#1e1e1e', padding: '10px', borderRadius: '6px', fontSize: '13px', margin: 0, whiteSpace: 'pre-wrap', border: '1px solid #2d2d2d' }}>{renderDataSafely(problem.sampleOutput)}</pre>
+                        <div style={{ marginTop: '24px' }}>
+                            <h4 style={{ color: '#34d399', marginBottom: '8px', fontSize: '11px', fontWeight: '700', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Sample Output Target</h4>
+                            <pre style={{ background: 'rgba(17, 24, 39, 0.4)', padding: '12px 16px', borderRadius: '10px', fontSize: '13px', margin: 0, whiteSpace: 'pre-wrap', border: '1px solid rgba(52, 211, 153, 0.15)', color: '#e5e7eb', fontFamily: 'Fira Code, monospace' }}>{renderDataSafely(problem.sampleOutput)}</pre>
                         </div>
                     )}
                 </div>
             </div>
 
-            <div onMouseDown={startHorizontalResize} style={{ width: '6px', background: '#121212', cursor: 'col-resize', zIndex: 10 }} />
+            <div onMouseDown={startHorizontalResize} style={{ width: '4px', background: '#030712', cursor: 'col-resize', zIndex: 10, opacity: 0.5, transition: 'background 0.2s' }} onMouseEnter={e => e.target.style.background = '#38bdf8'} onMouseLeave={e => e.target.style.background = '#030712'} />
 
             {/* Split Panel - Workspace Editor Space */}
             <div ref={rightPanelRef} style={{ flex: 1, display: 'flex', flexDirection: 'column', boxSizing: 'border-box', background: '#1e1e1e' }}>
-                <div style={{ padding: '12px 20px', display: 'flex', gap: '10px', alignItems: 'center', background: '#141414', borderBottom: '1px solid #262626' }}>
+                <div style={{ padding: '12px 20px', display: 'flex', gap: '10px', alignItems: 'center', background: 'rgba(17, 24, 39, 0.6)', borderBottom: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(8px)' }}>
                     <select 
                         value={language} 
                         onChange={(e) => handleLanguageChange(e.target.value)}
-                        style={{ padding: '6px 12px', borderRadius: '4px', background: '#262626', color: '#fff', border: '1px solid #444', cursor: 'pointer', fontSize: '13px' }}
+                        style={{ padding: '6px 32px 6px 12px', borderRadius: '6px', background: 'rgba(255,255,255,0.04)', color: '#f3f4f6', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', fontSize: '13px', fontWeight: '500', outline: 'none', appearance: 'none', backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%239ca3af\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e")', noRepeat: 'true', backgroundPosition: 'right 10px center', backgroundSize: '16px' }}
                     >
-                        <option value="cpp">C++</option>
-                        <option value="javascript">JavaScript</option>
-                        <option value="python">Python</option>
-                        <option value="java">Java</option>
+                        <option value="cpp" style={{background: '#111827'}}>C++</option>
+                        <option value="javascript" style={{background: '#111827'}}>JavaScript</option>
+                        <option value="python" style={{background: '#111827'}}>Python</option>
+                        <option value="java" style={{background: '#111827'}}>Java</option>
                     </select>
                     
-                    <button onClick={handleCustomRun} disabled={actionLoading} style={{ padding: '6px 14px', borderRadius: '4px', background: '#262626', color: '#fff', border: '1px solid #444', cursor: 'pointer', fontSize: '13px' }}>Run Code</button>
-                    <button onClick={() => handleAutomatedEvaluation('run')} disabled={actionLoading} style={{ padding: '6px 14px', borderRadius: '4px', background: '#2563eb', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>Run Tests</button>
-                    <button onClick={() => handleAutomatedEvaluation('submit')} disabled={actionLoading} style={{ padding: '6px 18px', borderRadius: '4px', background: '#16a34a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>SUBMIT</button>
-                    <button onClick={handleAiReview} disabled={isAiLoading} style={{ padding: '6px 14px', borderRadius: '4px', background: '#4f46e5', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold', marginLeft: 'auto', fontSize: '13px' }}>✨ AI REVIEW</button>
+                    <button onClick={handleCustomRun} disabled={actionLoading} style={{ padding: '7px 14px', borderRadius: '6px', background: 'rgba(255,255,255,0.04)', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', fontSize: '13px', fontWeight: '500', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}>Run Code</button>
+                    <button onClick={() => handleAutomatedEvaluation('run')} disabled={actionLoading} style={{ padding: '7px 14px', borderRadius: '6px', background: 'rgba(37, 99, 235, 0.2)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.3)', cursor: 'pointer', fontWeight: '600', fontSize: '13px', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(37, 99, 235, 0.35)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(37, 99, 235, 0.2)'}>Run Tests</button>
+                    <button onClick={() => handleAutomatedEvaluation('submit')} disabled={actionLoading} style={{ padding: '7px 18px', borderRadius: '6px', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: '#030712', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', transition: 'all 0.2s', boxShadow: '0 4px 12px 0 rgba(16, 185, 129, 0.25)' }} onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'} onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>SUBMIT</button>
+                    <button onClick={handleAiReview} disabled={isAiLoading} style={{ padding: '7px 14px', borderRadius: '6px', background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: '600', marginLeft: 'auto', fontSize: '13px', boxShadow: '0 4px 12px 0 rgba(99, 102, 241, 0.25)' }} onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'} onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>✨ AI REVIEW</button>
                 </div>
 
                 <div style={{ height: `${editorHeight}%`, width: '100%', overflow: 'hidden' }}>
@@ -431,47 +450,47 @@ useEffect(() => {
                         theme="vs-dark"
                         language={language}
                         onMount={handleEditorDidMount}
-                        options={{ fontSize: 13.5, minimap: { enabled: false }, automaticLayout: true }}
+                        options={{ fontSize: 13.5, minimap: { enabled: false }, automaticLayout: true, padding: { top: 12 } }}
                     />
                 </div>
 
-                <div onMouseDown={startVerticalResize} style={{ height: '6px', background: '#121212', cursor: 'row-resize', zIndex: 10 }} />
+                <div onMouseDown={startVerticalResize} style={{ height: '4px', background: '#030712', cursor: 'row-resize', zIndex: 10, opacity: 0.5 }} onMouseEnter={e => e.target.style.background = '#38bdf8'} onMouseLeave={e => e.target.style.background = '#030712'} />
 
                 {/* Outputs Sandboxed Control Console Tray */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#111', overflow: 'hidden' }}>
-                    <div style={{ display: 'flex', background: '#161616', borderBottom: '1px solid #262626' }}>
-                        <button onClick={() => setConsoleMode('custom')} style={{ padding: '10px 20px', background: consoleMode === 'custom' ? '#111' : 'transparent', color: consoleMode === 'custom' ? '#3b82f6' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>Custom Console</button>
-                        <button onClick={() => setConsoleMode('testcases')} style={{ padding: '10px 20px', background: consoleMode === 'testcases' ? '#111' : 'transparent', color: consoleMode === 'testcases' ? '#3b82f6' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>Test Run Evaluation Matrix {executionResults && `(${executionResults.filter(r => r.passed).length}/${executionResults.length})`}</button>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#070a13', overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', background: 'rgba(17, 24, 39, 0.4)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        <button onClick={() => setConsoleMode('custom')} style={{ padding: '12px 20px', background: consoleMode === 'custom' ? 'rgba(255,255,255,0.03)' : 'transparent', color: consoleMode === 'custom' ? '#38bdf8' : '#9ca3af', border: 'none', borderBottom: consoleMode === 'custom' ? '2px solid #38bdf8' : '2px solid transparent', cursor: 'pointer', fontSize: '13px', fontWeight: '600', transition: 'all 0.2s' }}>Custom Console</button>
+                        <button onClick={() => setConsoleMode('testcases')} style={{ padding: '12px 20px', background: consoleMode === 'testcases' ? 'rgba(255,255,255,0.03)' : 'transparent', color: consoleMode === 'testcases' ? '#38bdf8' : '#9ca3af', border: 'none', borderBottom: consoleMode === 'testcases' ? '2px solid #38bdf8' : '2px solid transparent', cursor: 'pointer', fontSize: '13px', fontWeight: '600', transition: 'all 0.2s' }}>Test Run Evaluation Matrix {executionResults && `(${executionResults.filter(r => r.passed).length}/${executionResults.length})`}</button>
                     </div>
 
-                    <div style={{ flex: 1, padding: '15px', overflowY: 'auto' }}>
+                    <div style={{ flex: 1, padding: '1.25rem', overflowY: 'auto' }}>
                         {consoleMode === 'custom' ? (
-                            <div style={{ display: 'flex', gap: '15px', height: '100%', minHeight: '110px' }}>
-                                <textarea value={customInput} onChange={(e) => setCustomInput(e.target.value)} style={{ flex: 1, background: '#1a1a1a', color: '#fff', border: '1px solid #2d2d2d', borderRadius: '4px', padding: '10px', fontFamily: 'monospace', resize: 'none', fontSize: '12px' }} />
-                                <div style={{ flex: 1, background: '#070707', color: customError ? '#ef4444' : '#4ade80', border: '1px solid #2d2d2d', borderRadius: '4px', padding: '10px', fontFamily: 'monospace', whiteSpace: 'pre-wrap', fontSize: '12px', overflowY: 'auto' }}>
+                            <div style={{ display: 'flex', gap: '16px', height: '100%', minHeight: '110px' }}>
+                                <textarea value={customInput} onChange={(e) => setCustomInput(e.target.value)} style={{ flex: 1, background: 'rgba(17, 24, 39, 0.3)', color: '#f3f4f6', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '12px', fontFamily: 'Fira Code, monospace', resize: 'none', fontSize: '13px', outline: 'none' }} onFocus={e => e.target.style.borderColor = 'rgba(255,255,255,0.2)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'} />
+                                <div style={{ flex: 1, background: 'rgba(3, 7, 18, 0.4)', color: customError ? '#f87171' : '#34d399', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '12px', fontFamily: 'Fira Code, monospace', whiteSpace: 'pre-wrap', fontSize: '13px', overflowY: 'auto', boxShadow: 'inset 0 2px 4px 0 rgba(0,0,0,0.2)' }}>
                                     {customOutput || "Console output buffer trace is empty."}
                                 </div>
                             </div>
                         ) : (
                             <div>
                                 {verdictMessage && (
-                                    <div style={{ padding: '10px', borderRadius: '4px', background: verdictMessage.includes('🟢') ? 'rgba(22, 163, 74, 0.12)' : 'rgba(239, 68, 68, 0.12)', border: `1px solid ${verdictMessage.includes('🟢') ? '#16a34a' : '#dc2626'}`, color: verdictMessage.includes('🟢') ? '#4ade80' : '#fca5a5', fontWeight: 'bold', marginBottom: '12px', fontSize: '13px' }}>
+                                    <div style={{ padding: '12px 16px', borderRadius: '8px', background: verdictMessage.includes('🟢') ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', border: `1px solid ${verdictMessage.includes('🟢') ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`, color: verdictMessage.includes('🟢') ? '#34d399' : '#f87171', fontWeight: '600', marginBottom: '16px', fontSize: '13px', backdropFilter: 'blur(4px)' }}>
                                         {verdictMessage}
                                     </div>
                                 )}
                                 {executionResults && (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                         {executionResults.map((res, i) => (
-                                            <div key={res.id} style={{ background: '#181818', border: `1px solid ${res.passed ? '#16a34a' : '#dc2626'}`, borderRadius: '6px', padding: '12px' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
-                                                    <span style={{ fontWeight: 'bold', color: res.passed ? '#4ade80' : '#f87171' }}>Assertion Step #{i + 1} ({res.passed ? 'PASSED' : 'FAILED'})</span>
-                                                    <span style={{ fontSize: '11px', color: '#64748b' }}>{res.diagnostics}</span>
+                                            <div key={res.id} style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${res.passed ? 'rgba(52, 211, 153, 0.2)' : 'rgba(248, 113, 113, 0.2)'}`, borderRadius: '10px', padding: '14px' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '8px' }}>
+                                                    <span style={{ fontWeight: '600', color: res.passed ? '#34d399' : '#f87171' }}>Assertion Step #{i + 1} ({res.passed ? 'PASSED' : 'FAILED'})</span>
+                                                    <span style={{ fontSize: '11px', color: '#6b7280', fontFamily: 'monospace' }}>{res.diagnostics}</span>
                                                 </div>
                                                 {!res.isHidden && (
-                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', fontSize: '12px', fontFamily: 'monospace', background: '#0d0d0d', padding: '8px', borderRadius: '4px', marginTop: '4px' }}>
-                                                        <div><span style={{ color: '#555' }}>Input Stream:</span> <pre style={{ margin: '2px 0 0 0', color: '#fff' }}>{res.input}</pre></div>
-                                                        <div><span style={{ color: '#555' }}>Expected Configuration:</span> <pre style={{ margin: '2px 0 0 0', color: '#4ade80' }}>{res.expectedOutput}</pre></div>
-                                                        <div><span style={{ color: '#555' }}>Actual Outcome:</span> <pre style={{ margin: '2px 0 0 0', color: res.passed ? '#4ade80' : '#f87171' }}>{res.actualOutput}</pre></div>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', fontSize: '12.5px', fontFamily: 'Fira Code, monospace', background: 'rgba(3, 7, 18, 0.3)', padding: '10px', borderRadius: '6px', marginTop: '6px', color: '#cbd5e1' }}>
+                                                        <div><span style={{ color: '#4b5563', display: 'block', fontSize: '11px', fontWeight: '600' }}>Input Stream:</span> <pre style={{ margin: '4px 0 0 0', color: '#f3f4f6' }}>{res.input}</pre></div>
+                                                        <div><span style={{ color: '#4b5563', display: 'block', fontSize: '11px', fontWeight: '600' }}>Expected Configuration:</span> <pre style={{ margin: '4px 0 0 0', color: '#34d399' }}>{res.expectedOutput}</pre></div>
+                                                        <div><span style={{ color: '#4b5563', display: 'block', fontSize: '11px', fontWeight: '600' }}>Actual Outcome:</span> <pre style={{ margin: '4px 0 0 0', color: res.passed ? '#34d399' : '#f87171' }}>{res.actualOutput}</pre></div>
                                                     </div>
                                                 )}
                                             </div>
@@ -485,13 +504,13 @@ useEffect(() => {
             </div>
 
             {/* Sliding Layer - AI Metrics Sidecar */}
-            {isDrawerOpen && <div onClick={() => setIsDrawerOpen(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0, 0, 0, 0.65)', zIndex: 999 }} />}
-            <div style={{ position: 'fixed', top: 0, right: isDrawerOpen ? 0 : '-500px', width: '100%', maxWidth: '480px', height: '100vh', background: '#151515', boxShadow: '-8px 0 30px rgba(0,0,0,0.7)', zIndex: 1000, transition: 'right 0.25s ease-in-out', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', borderBottom: '1px solid #2d2d2d', background: '#1c1c1c' }}>
-                    <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#818cf8' }}>✨ AI Diagnostics Insight Matrix</h2>
-                    <button onClick={() => setIsDrawerOpen(false)} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '26px', cursor: 'pointer' }}>&times;</button>
+            {isDrawerOpen && <div onClick={() => setIsDrawerOpen(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(4px)', zIndex: 999 }} />}
+            <div style={{ position: 'fixed', top: 0, right: isDrawerOpen ? 0 : '-500px', width: '100%', maxWidth: '480px', height: '100vh', background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(20px)', borderLeft: '1px solid rgba(255,255,255,0.08)', boxShadow: '-10px 0 40px rgba(0,0,0,0.6)', zIndex: 1000, transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(17, 24, 39, 0.4)' }}>
+                    <h2 style={{ margin: 0, fontSize: '17px', fontWeight: '600', color: '#818cf8', letterSpacing: '-0.01em' }}>✨ AI Diagnostics Insight Matrix</h2>
+                    <button onClick={() => setIsDrawerOpen(false)} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>&times;</button>
                 </div>
-                <div style={{ padding: '20px', overflowY: 'auto', flex: 1, whiteSpace: 'pre-wrap', color: '#e2e8f0', fontFamily: 'monospace', fontSize: '12.5px', lineHeight: '1.5' }}>
+                <div style={{ padding: '24px', overflowY: 'auto', flex: 1, whiteSpace: 'pre-wrap', color: '#e5e7eb', fontFamily: 'Fira Code, monospace', fontSize: '13px', lineHeight: '1.6' }}>
                     {isAiLoading ? 'Executing semantic parser array vectors...' : aiReviewData}
                 </div>
             </div>
