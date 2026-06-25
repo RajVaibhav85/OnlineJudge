@@ -1,23 +1,31 @@
 const express = require('express');
 const router = express.Router();
-const dbController = require('../Controllers/dbController');
+const protect = require('../Middlewares/authMiddleware');
+const problemsController = require('../Controllers/dbController');
 
-// Problem Routes
-router.put('/insert-problem', dbController.insertProblem);
-router.get('/get-problems', dbController.getProblems);
-router.get('/get-problem/:code', dbController.getProblem);
-router.put('/update-problem/:code', dbController.updateProblem);
-router.delete('/delete-problem/:code', dbController.deleteProblem);
+// ==========================================
+// PROBLEM CRUD ROUTES
+// ==========================================
+// Changed from PUT to POST to match semantic standards for creating resources
+router.post('/insert-problem', protect, problemsController.insertProblem);
+router.get('/get-problems', problemsController.getProblems);
+router.get('/get-problem/:code', problemsController.getProblem);
+router.put('/update-problem/:code', protect, problemsController.updateProblem);
+router.delete('/delete-problem/:code', protect, problemsController.deleteProblem);
 
-// Test Case Routes
-router.post('/insert-testcases/:code', dbController.insertTestCases);
-router.get('/get-testcases/:code', dbController.getTestCases);
-router.put('/update-testcase/:id', dbController.updateTestCase);
-router.delete('/delete-testcase/:id', dbController.deleteTestCase);
+// ==========================================
+// TESTCASE ROUTES
+// ==========================================
+router.post('/insert-testcases/:code', protect, problemsController.insertTestCases);
+router.get('/get-testcases/:code', problemsController.getTestCases);
+router.put('/update-testcase/:id', protect, problemsController.updateTestCase);
+router.delete('/delete-testcase/:id', protect, problemsController.deleteTestCase);
+router.delete('/delete-testcases/problem/:code', protect, problemsController.deleteTestCasesByProblem);
 
-// Submission Management Architecture
-router.post('/submit-solution/:code', dbController.submitSolution);
-router.put('/update-solution-verdict/:id', dbController.updateSolutionVerdict);
-router.get('/latest-submission/:userId/:problemId', dbController.getLatestSubmission);
+// ==========================================
+// SOLUTIONS & SUBMISSIONS ROUTES (NEW)
+// ==========================================
+router.post('/save-submission', protect, problemsController.saveSubmission);
+router.get('/get-submissions', protect, problemsController.getSubmissions);
 
 module.exports = router;

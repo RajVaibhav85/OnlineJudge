@@ -2,10 +2,11 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './components/AuthContext'
 import Auth from './pages/Authentication/Authentication'
 import Dashboard from './pages/Dashboard/Dashboard'
+import AdminDashboard from './pages/Dashboard/AdminDashboard'
 import Coder from './pages/Coder/Coder'
 import ProtectedRoute from './components/ProtectedRoute'
 import ProfilePage from "./pages/Profile/Profile";
-import AdminPanel from "./pages/Dashboard/AdminPanel"; // Adjust path to your AdminPanel component file
+import TestHub from "./pages/TestHub/TestHub";
 
 function App() {
   return (
@@ -18,6 +19,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/:username/admin" 
+            element={
+              <ProtectedRoute>
+                <AdminDashboard />
               </ProtectedRoute>
             } 
           />
@@ -40,6 +49,14 @@ function App() {
             } 
           />
 
+          <Route 
+            path="/:username/test-yourself" 
+            element={
+              <ProtectedRoute>
+                <TestHub />
+              </ProtectedRoute>
+            } 
+          />
           <Route 
             path="/:username/:code" 
             element={
