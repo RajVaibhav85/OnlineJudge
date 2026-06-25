@@ -5,6 +5,7 @@ const app = express();
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const cookieParser = require('cookie-parser');
+const { execSync } = require('child_process');
 
 dotenv.config();
 

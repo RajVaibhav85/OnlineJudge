@@ -1,18 +1,19 @@
 FROM node:20-slim
 
+# Install only Docker CLI — we use the HOST daemon via socket mount
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    g++ \
-    python3 \
-    # openjdk-17-jre-headless \
+    docker.io \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/app
 
 COPY package*.json ./
-RUN npm install
+RUN npm install --omit=dev
 
 COPY . .
+
+# Ensure the temp jobs directory exists inside container
+RUN mkdir -p /usr/src/app/codes
 
 EXPOSE 5000
 

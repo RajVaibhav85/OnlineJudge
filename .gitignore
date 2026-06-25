@@ -28,6 +28,9 @@ dist-ssr
 /backend/node_modules
 /backend/.env
 /backend/dist
+/backend/codes
+/backend/inputs
+/backend/outputs
 
 /frontend/node_modules
 /frontend/.env
