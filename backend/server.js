@@ -5,6 +5,7 @@ const app = express();
 const dotenv = require('dotenv');
 const connectDB = require('./config/db')
 const cookieParser = require('cookie-parser');
+const { execSync } = require('child_process');
 
 dotenv.config();
 
@@ -63,6 +64,24 @@ app.use((err, req, res, next) => {
         errors: process.env.NODE_ENV === 'development' ? err.errors || null : undefined,
         stack: process.env.NODE_ENV === 'development' ? err.stack : {}
     });
+});
+
+
+const JUDGE_IMAGES = [
+  'frolvlad/alpine-gxx:latest',
+  'python:3.11-alpine',
+  'node:20-alpine',
+  'eclipse-temurin:17-alpine',
+];
+
+console.log('Pre-pulling judge Docker images...');
+JUDGE_IMAGES.forEach((img) => {
+  try {
+    execSync(`docker pull ${img}`, { stdio: 'inherit' });
+    console.log(`✓ ${img}`);
+  } catch (e) {
+    console.warn(`⚠ Could not pull ${img}:`, e.message);
+  }
 });
 
 
