@@ -38,6 +38,17 @@ function App() {
               </ProtectedRoute>
             } 
           />
+
+          {/* CRITICAL: Must be placed ABOVE /:username/:code to avoid code parameter shadowing */}
+          <Route 
+            path="/:username/admin" 
+            element={
+              <ProtectedRoute>
+                <AdminPanel />
+              </ProtectedRoute>
+            } 
+          />
+
           <Route 
             path="/:username/test-yourself" 
             element={

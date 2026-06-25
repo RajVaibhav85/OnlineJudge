@@ -2,115 +2,147 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../components/AuthContext'
 
+/*
+  Design notes — "Galactic Glass"
+  Palette: void #0a0518, nebula #1a0f33, accent violet #a78bfa, accent indigo #818cf8,
+           starlight text #f3f0ff, muted #b4aed1
+  Type: Inter for everything (kept from original), tightened tracking on display text
+  Signature element: a soft two-tone violet/indigo glow behind the card, plus a thin
+  "orbit" gradient ring around the active tab — nods to the "Online Judge" / coding-orbit idea
+  without resorting to literal space-cliché (no stars/planets clipart).
+*/
+
 const s = {
   page: {
     minHeight: '100vh',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: '#f5f5f5',
-    fontFamily: 'system-ui, sans-serif',
-    padding: '1rem',
+    position: 'relative',
+    overflow: 'hidden',
+    background: 'linear-gradient(160deg, #0a0518 0%, #1b1033 45%, #2a1854 75%, #120a26 100%)',
+    fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+    padding: '1.5rem',
+    letterSpacing: '-0.01em'
   },
   card: {
-    background: '#fff',
-    borderRadius: '12px',
-    border: '0.5px solid #e0e0e0',
-    padding: '2rem',
+    position: 'relative',
+    zIndex: 1,
+    background: 'rgba(26, 16, 46, 0.45)',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    borderRadius: '20px',
+    border: '1px solid rgba(167, 139, 250, 0.18)',
+    padding: '2.5rem 2rem',
     width: '100%',
-    maxWidth: '400px',
+    maxWidth: '420px',
+    boxShadow: '0 25px 60px -15px rgba(76, 29, 149, 0.45), inset 0 1px 1px 0 rgba(255, 255, 255, 0.06)'
   },
   header: {
     textAlign: 'center',
-    marginBottom: '1.5rem',
+    marginBottom: '2rem',
   },
   title: {
-    fontSize: '22px',
-    fontWeight: '500',
-    margin: '0 0 4px',
-    color: '#111',
+    fontSize: '26px',
+    fontWeight: '700',
+    margin: '0 0 6px',
+    background: 'linear-gradient(135deg, #f3f0ff 0%, #c4b5fd 100%)',
+    WebkitBackgroundClip: 'text',
+    backgroundClip: 'text',
+    color: 'transparent',
+    letterSpacing: '-0.03em'
   },
   subtitle: {
-    fontSize: '13px',
-    color: '#888',
+    fontSize: '14px',
+    color: '#b4aed1',
     margin: 0,
   },
   tabs: {
     display: 'flex',
-    borderBottom: '1px solid #e8e8e8',
-    marginBottom: '1.5rem',
+    position: 'relative',
+    background: 'rgba(10, 5, 24, 0.4)',
+    borderRadius: '12px',
+    padding: '4px',
+    marginBottom: '2rem',
+    border: '1px solid rgba(167, 139, 250, 0.12)',
   },
   tab: (active) => ({
     flex: 1,
-    padding: '8px',
-    background: 'none',
+    padding: '10px 8px',
+    background: active ? 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)' : 'none',
     border: 'none',
-    borderBottom: active ? '2px solid #111' : '2px solid transparent',
+    borderRadius: '9px',
     cursor: 'pointer',
     fontSize: '14px',
-    fontWeight: active ? '500' : '400',
-    color: active ? '#111' : '#888',
-    transition: 'all 0.15s',
+    fontWeight: active ? '600' : '500',
+    color: active ? '#f3f0ff' : '#9d96b8',
+    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+    boxShadow: active ? '0 4px 14px 0 rgba(124, 58, 237, 0.4)' : 'none',
   }),
   group: {
-    marginBottom: '1rem',
+    marginBottom: '1.25rem',
   },
   label: {
     display: 'block',
     fontSize: '13px',
     fontWeight: '500',
-    color: '#444',
-    marginBottom: '5px',
+    color: '#b4aed1',
+    marginBottom: '8px',
   },
   input: {
     width: '100%',
-    padding: '9px 12px',
+    padding: '11px 14px',
     fontSize: '14px',
-    border: '1px solid #ddd',
-    borderRadius: '8px',
+    border: '1px solid rgba(167, 139, 250, 0.16)',
+    borderRadius: '10px',
     outline: 'none',
     boxSizing: 'border-box',
-    color: '#111',
-    background: '#fff',
-    transition: 'border-color 0.15s',
+    color: '#f3f0ff',
+    background: 'rgba(10, 5, 24, 0.45)',
+    transition: 'all 0.2s ease',
+    boxShadow: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)'
   },
   btn: (loading) => ({
     width: '100%',
-    padding: '10px',
-    background: '#111',
-    color: '#fff',
+    padding: '12px',
+    background: 'linear-gradient(135deg, #a78bfa 0%, #6366f1 100%)',
+    color: '#0a0518',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: '10px',
     fontSize: '14px',
-    fontWeight: '500',
+    fontWeight: '600',
     cursor: loading ? 'not-allowed' : 'pointer',
-    marginTop: '0.5rem',
+    marginTop: '0.75rem',
     opacity: loading ? 0.6 : 1,
-    transition: 'opacity 0.15s',
+    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+    boxShadow: loading ? 'none' : '0 4px 14px 0 rgba(167, 139, 250, 0.35)'
   }),
   alert: (type) => ({
-    padding: '10px 12px',
-    borderRadius: '8px',
+    padding: '12px 14px',
+    borderRadius: '10px',
     fontSize: '13px',
-    marginBottom: '1rem',
-    background: type === 'error' ? '#fff1f0' : '#f0faf4',
-    color: type === 'error' ? '#c0392b' : '#27ae60',
-    border: `1px solid ${type === 'error' ? '#fcc' : '#b2dfcc'}`,
+    marginBottom: '1.25rem',
+    background: type === 'error' ? 'rgba(127, 29, 29, 0.25)' : 'rgba(76, 29, 149, 0.25)',
+    color: type === 'error' ? '#fca5a5' : '#c4b5fd',
+    border: `1px solid ${type === 'error' ? 'rgba(239, 68, 68, 0.25)' : 'rgba(167, 139, 250, 0.3)'}`,
+    backdropFilter: 'blur(8px)',
   }),
   switchText: {
     textAlign: 'center',
     fontSize: '13px',
-    color: '#888',
-    marginTop: '1rem',
+    color: '#9d96b8',
+    marginTop: '1.5rem',
   },
   switchLink: {
     background: 'none',
     border: 'none',
-    color: '#111',
-    fontWeight: '500',
+    color: '#c4b5fd',
+    fontWeight: '600',
     cursor: 'pointer',
     fontSize: '13px',
-    textDecoration: 'underline',
+    textDecoration: 'none',
+    marginLeft: '4px',
+    transition: 'color 0.15s ease'
   },
   row: {
     display: 'grid',
@@ -118,6 +150,9 @@ const s = {
     gap: '12px',
   },
 }
+
+const focusOn = (e) => { e.target.style.borderColor = '#a78bfa'; e.target.style.boxShadow = '0 0 0 3px rgba(167, 139, 250, 0.18)'; }
+const focusOff = (e) => { e.target.style.borderColor = 'rgba(167, 139, 250, 0.16)'; e.target.style.boxShadow = 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)'; }
 
 export default function Auth() {
   const { user, loading: authLoading, login, register } = useAuth()
@@ -144,7 +179,7 @@ export default function Auth() {
 
   const handleLogin = async (e) => {
     e.preventDefault()
-    setLoading(true)
+    loading || setLoading(true)
     setError('')
     const { ok, message } = await login(loginForm.email, loginForm.password)
     if (ok) {
@@ -161,7 +196,7 @@ export default function Auth() {
     if (signupForm.password !== signupForm.confirmPassword) {
       return setError('Passwords do not match')
     }
-    setLoading(true)
+    loading || setLoading(true)
     setError('')
     const { ok, message } = await register({
       username: signupForm.username,
@@ -202,20 +237,28 @@ export default function Auth() {
               <label style={s.label}>Email</label>
               <input style={s.input} type="email" name="email"
                 value={loginForm.email} onChange={handleChange(setLoginForm)}
-                placeholder="you@example.com" required disabled={loading} />
+                placeholder="you@example.com" required disabled={loading}
+                onFocus={focusOn} onBlur={focusOff} />
             </div>
             <div style={s.group}>
               <label style={s.label}>Password</label>
               <input style={s.input} type="password" name="password"
                 value={loginForm.password} onChange={handleChange(setLoginForm)}
-                placeholder="••••••••" required disabled={loading} />
+                placeholder="••••••••" required disabled={loading}
+                onFocus={focusOn} onBlur={focusOff} />
             </div>
-            <button type="submit" style={s.btn(loading)} disabled={loading}>
+            <button
+              type="submit"
+              style={s.btn(loading)}
+              disabled={loading}
+              onMouseEnter={e => { if(!loading) { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 18px 0 rgba(167, 139, 250, 0.45)'; } }}
+              onMouseLeave={e => { if(!loading) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 14px 0 rgba(167, 139, 250, 0.35)'; } }}
+            >
               {loading ? 'Logging in...' : 'Login'}
             </button>
             <p style={s.switchText}>
               No account?{' '}
-              <button type="button" style={s.switchLink} onClick={() => switchTab('signup')}>
+              <button type="button" style={s.switchLink} onClick={() => switchTab('signup')} onMouseEnter={e => e.currentTarget.style.color = '#ddd6fe'} onMouseLeave={e => e.currentTarget.style.color = '#c4b5fd'}>
                 Sign up
               </button>
             </p>
@@ -227,42 +270,53 @@ export default function Auth() {
                 <label style={s.label}>Username</label>
                 <input style={s.input} type="text" name="username"
                   value={signupForm.username} onChange={handleChange(setSignupForm)}
-                  placeholder="handle" required disabled={loading} />
+                  placeholder="handle" required disabled={loading}
+                  onFocus={focusOn} onBlur={focusOff} />
               </div>
               <div style={s.group}>
                 <label style={s.label}>Date of birth</label>
-                <input style={s.input} type="date" name="dob"
+                <input style={{...s.input, colorScheme: 'dark'}} type="date" name="dob"
                   value={signupForm.dob} onChange={handleChange(setSignupForm)}
                   required disabled={loading}
-                  max={new Date().toISOString().split('T')[0]} />
+                  max={new Date().toISOString().split('T')[0]}
+                  onFocus={focusOn} onBlur={focusOff} />
               </div>
             </div>
             <div style={s.group}>
               <label style={s.label}>Email</label>
               <input style={s.input} type="email" name="email"
                 value={signupForm.email} onChange={handleChange(setSignupForm)}
-                placeholder="you@example.com" required disabled={loading} />
+                placeholder="you@example.com" required disabled={loading}
+                onFocus={focusOn} onBlur={focusOff} />
             </div>
             <div style={s.row}>
               <div style={s.group}>
                 <label style={s.label}>Password</label>
                 <input style={s.input} type="password" name="password"
                   value={signupForm.password} onChange={handleChange(setSignupForm)}
-                  placeholder="••••••••" required disabled={loading} />
+                  placeholder="••••••••" required disabled={loading}
+                  onFocus={focusOn} onBlur={focusOff} />
               </div>
               <div style={s.group}>
                 <label style={s.label}>Confirm</label>
                 <input style={s.input} type="password" name="confirmPassword"
                   value={signupForm.confirmPassword} onChange={handleChange(setSignupForm)}
-                  placeholder="••••••••" required disabled={loading} />
+                  placeholder="••••••••" required disabled={loading}
+                  onFocus={focusOn} onBlur={focusOff} />
               </div>
             </div>
-            <button type="submit" style={s.btn(loading)} disabled={loading}>
+            <button
+              type="submit"
+              style={s.btn(loading)}
+              disabled={loading}
+              onMouseEnter={e => { if(!loading) { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 18px 0 rgba(167, 139, 250, 0.45)'; } }}
+              onMouseLeave={e => { if(!loading) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 14px 0 rgba(167, 139, 250, 0.35)'; } }}
+            >
               {loading ? 'Creating account...' : 'Sign up'}
             </button>
             <p style={s.switchText}>
               Already have an account?{' '}
-              <button type="button" style={s.switchLink} onClick={() => switchTab('login')}>
+              <button type="button" style={s.switchLink} onClick={() => switchTab('login')} onMouseEnter={e => e.currentTarget.style.color = '#ddd6fe'} onMouseLeave={e => e.currentTarget.style.color = '#c4b5fd'}>
                 Login
               </button>
             </p>

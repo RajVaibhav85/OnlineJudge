@@ -6,6 +6,7 @@ const BACKEND_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:5000';
 const COMPILER_API = `${BACKEND_URL}/api/compiler`;
 const DB_API = `${BACKEND_URL}/api/db`;
 const AI_API = `${BACKEND_URL}/api/ai`;
+const AUTH_API = `${BACKEND_URL}/api/auth`;
 
 const boilerplates = {
     cpp: `#include <iostream>\nusing namespace std;\n\nint main() {\n    // Write your code here\n    return 0;\n}`,
@@ -14,27 +15,29 @@ const boilerplates = {
     java: `public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello");\n    }\n}`
 };
 
+const languageMapping = {
+    toBackend: { cpp: 'C++', javascript: 'JavaScript', python: 'Python', java: 'Java' },
+    toFrontend: { 'C++': 'cpp', 'JavaScript': 'javascript', 'Python': 'python', 'Java': 'java' }
+};
+
 export default function Coder() {
-    const { username, code: problemCode } = useParams();
+    const { code: problemCode } = useParams();
     const navigate = useNavigate();
 
-    // DOM references
     const containerRef = useRef(null);
     const rightPanelRef = useRef(null);
     const editorRef = useRef(null); 
 
+    const [userContext, setUserContext] = useState(null);
     const [problem, setProblem] = useState(null);
     const [testCases, setTestCases] = useState([]);
     const [fetchingData, setFetchingData] = useState(true);
-
     const [language, setLanguage] = useState('cpp');
     const [editorValue, setEditorValue] = useState(boilerplates.cpp);
     
-    // UI Layout percentages
     const [leftPanelWidth, setLeftPanelWidth] = useState(40); 
     const [editorHeight, setEditorHeight] = useState(60);     
 
-    // Console tabs & run records
     const [consoleMode, setConsoleMode] = useState('custom'); 
     const [customInput, setCustomInput] = useState('');
     const [customOutput, setCustomOutput] = useState('');
@@ -45,7 +48,9 @@ export default function Coder() {
     const [verdictMessage, setVerdictMessage] = useState('');
 
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    const [aiReviewData, setAiReviewData] = useState('');
+    const [aiReviewData, setAiReviewData] = useState(null);
+    const [aiReviewError, setAiReviewError] = useState('');
+    const [codeCopied, setCodeCopied] = useState(false);
     const [isAiLoading, setIsAiLoading] = useState(false);
 
     // TestHub Synchronized States
@@ -68,16 +73,12 @@ export default function Coder() {
             const totalWidth = containerRef.current.offsetWidth;
             const deltaX = moveEvent.clientX - startX;
             const newWidthPercent = startWidth + (deltaX / totalWidth) * 100;
-            if (newWidthPercent > 20 && newWidthPercent < 75) {
-                setLeftPanelWidth(newWidthPercent);
-            }
+            if (newWidthPercent > 20 && newWidthPercent < 75) setLeftPanelWidth(newWidthPercent);
         };
-
         const stopHorizontalResize = () => {
             window.removeEventListener('mousemove', doHorizontalResize);
             window.removeEventListener('mouseup', stopHorizontalResize);
         };
-
         window.addEventListener('mousemove', doHorizontalResize);
         window.addEventListener('mouseup', stopHorizontalResize);
     };
@@ -92,16 +93,12 @@ export default function Coder() {
             const totalHeight = rightPanelRef.current.offsetHeight;
             const deltaY = moveEvent.clientY - startY;
             const newHeightPercent = startHeight + (deltaY / totalHeight) * 100;
-            if (newHeightPercent > 25 && newHeightPercent < 85) {
-                setEditorHeight(newHeightPercent);
-            }
+            if (newHeightPercent > 25 && newHeightPercent < 85) setEditorHeight(newHeightPercent);
         };
-
         const stopVerticalResize = () => {
             window.removeEventListener('mousemove', doVerticalResize);
             window.removeEventListener('mouseup', stopVerticalResize);
         };
-
         window.addEventListener('mousemove', doVerticalResize);
         window.addEventListener('mouseup', stopVerticalResize);
     };
@@ -195,7 +192,7 @@ export default function Coder() {
     const handleCustomRun = async () => {
         setActionLoading(true);
         setCustomError(false);
-        setCustomOutput('Compiling custom execution matrix...');
+        setCustomOutput('Executing sandbox compiler matrix engine...');
         setConsoleMode('custom');
 
         try {
@@ -206,15 +203,17 @@ export default function Coder() {
                 credentials: 'include'
             });
             const data = await response.json();
+            
+
             if (response.ok) {
-                setCustomOutput(data.output || "Execution completed without output text response.");
+                setCustomOutput(data.output || "Execution sequence closed with empty buffer stream outputs.");
             } else {
                 setCustomError(true);
-                setCustomOutput(data.error || "An execution error occurred.");
+                setCustomOutput(data.error || "A code runtime validation exception terminated execution.");
             }
         } catch (error) {
             setCustomError(true);
-            setCustomOutput("Network error connecting compiler sandbox.");
+            setCustomOutput("Network route interruption dropped interaction channels to remote sandbox.");
         } finally {
             setActionLoading(false);
         }
@@ -223,18 +222,21 @@ export default function Coder() {
     const handleAutomatedEvaluation = async (evaluationScope) => {
         setActionLoading(true);
         setConsoleMode('testcases');
-        setVerdictMessage('Evaluating code against runtime test vectors...');
+        setVerdictMessage('Validating active solution text with test assertions suite...');
         setExecutionResults(null);
 
-        const targetScopeCases = evaluationScope === 'run' 
-            ? testCases.filter(tc => !tc.isHidden) 
-            : testCases;
-
-        if (targetScopeCases.length === 0) {
-            setVerdictMessage("No compatible test parameters present for calculation.");
+        const targets = evaluationScope === 'run' ? testCases.filter(tc => !tc.isHidden) : testCases;
+        if (targets.length === 0) {
+            setVerdictMessage("No available test assertions matching current view criteria parameters.");
             setActionLoading(false);
             return;
         }
+
+        const activeCodeBuffer = getActiveCode();
+
+        // New metric aggregators to identify peak load metrics over all tests
+        let maxTimeSpent = 0;
+        let maxMemoryConsumed = 0;
 
         try {
             const evaluationPipeline = targetScopeCases.map(async (tc, index) => {
@@ -247,34 +249,29 @@ export default function Coder() {
                     });
                     const data = await response.json();
                     
-                    const normalizedExpected = tc.output.trim();
-                    const normalizedActual = (data.output || '').trim();
-                    const processPassed = response.ok && (normalizedExpected === normalizedActual);
+
+                    // Track maximum peak metrics dynamically
+                    if (data.executionTime > maxTimeSpent) maxTimeSpent = data.executionTime;
+                    if (data.memory > maxMemoryConsumed) maxMemoryConsumed = data.memory;
+
+                    const matched = response.ok && (tc.output.trim() === (data.output || '').trim());
 
                     return {
-                        id: tc._id || index,
+                        id: tc._id || idx,
                         input: tc.input,
                         expectedOutput: tc.output,
-                        actualOutput: data.output || data.error || 'Empty Buffer',
+                        actualOutput: data.output || data.error || 'Blank Return Matrix',
                         isHidden: tc.isHidden,
-                        passed: processPassed,
-                        runtimeDiagnostics: response.ok ? 'Success' : 'Runtime Error Exception'
+                        passed: matched,
+                        diagnostics: response.ok ? `Success (${data.executionTime}ms)` : 'Fault'
                     };
                 } catch {
-                    return {
-                        id: tc._id || index,
-                        input: tc.input,
-                        expectedOutput: tc.output,
-                        actualOutput: 'Network disconnect dropped evaluation packet.',
-                        isHidden: tc.isHidden,
-                        passed: false,
-                        runtimeDiagnostics: 'Pipeline Error'
-                    };
+                    return { id: tc._id || idx, input: tc.input, expectedOutput: tc.output, actualOutput: 'Transport connection failure loops.', isHidden: tc.isHidden, passed: false, diagnostics: 'Disconnected' };
                 }
             });
 
-            const processedOutputs = await Promise.all(evaluationPipeline);
-            setExecutionResults(processedOutputs);
+            const outputs = await Promise.all(tasks);
+            setExecutionResults(outputs);
 
             const errorsFound = processedOutputs.some(item => !item.passed);
             const absoluteVerdict = errorsFound ? 'Wrong Answer' : 'Accepted';
@@ -303,17 +300,29 @@ export default function Coder() {
             }
 
         } catch (err) {
-            setVerdictMessage('Evaluation pipeline failed internally.');
+            console.error(err);
+            setVerdictMessage('Validation loop runtime exception failure.');
         } finally {
             setActionLoading(false);
+        }
+    };
+
+    const handleCopyRefactoredCode = async () => {
+        if (!aiReviewData?.refactoredCode) return;
+        try {
+            await navigator.clipboard.writeText(aiReviewData.refactoredCode);
+            setCodeCopied(true);
+            setTimeout(() => setCodeCopied(false), 1800);
+        } catch (err) {
+            console.error('Clipboard copy failed:', err);
         }
     };
 
     const handleAiReview = async () => {
         setIsDrawerOpen(true);
         setIsAiLoading(true);
-        setAiReviewData('Analyzing structural edge cases and optimizations...');
-
+        setAiReviewError('');
+        setAiReviewData(null);
         try {
             const response = await fetch(`${AI_API}/ai-review`, {
                 method: 'POST',
@@ -322,25 +331,20 @@ export default function Coder() {
                 credentials: 'include'
             });
             const data = await response.json();
-            setAiReviewData(response.ok ? data.review : `### Error\n${data.error}`);
+            if (response.ok) {
+                setAiReviewData(data.review);
+            } else {
+                setAiReviewError(data.error || 'Failed to generate AI review.');
+            }
         } catch (error) {
-            setAiReviewData("### Network Error\nFailed to target AI Endpoint.");
+            setAiReviewError('Failed to reach the AI review service. Check your connection and try again.');
         } finally {
             setIsAiLoading(false);
         }
     };
 
     if (fetchingData) {
-        return <div style={{ background: '#1e1e1e', height: '100vh', color: '#aaa', padding: '40px' }}>Loading Challenge Context...</div>;
-    }
-
-    if (!problem) {
-        return (
-            <div style={{ background: '#1e1e1e', height: '100vh', color: '#f87171', padding: '40px' }}>
-                <h3>Problem context missing!</h3>
-                <button onClick={() => navigate(`/${username || ''}`)} style={{ background: '#333', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '4px', cursor: 'pointer', marginTop: '10px' }}>Return to Dashboard</button>
-            </div>
-        );
+        return <div style={{ background: '#0a0518', height: '100vh', color: '#aaa3c8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontFamily: 'sans-serif' }}>Acquiring Context Profiles via Security Decoupled Handshakes...</div>;
     }
 
     return (

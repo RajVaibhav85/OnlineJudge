@@ -56,7 +56,7 @@ export default function Dashboard() {
   }, [user, loading, navigate])
 
   useEffect(() => {
-    if (user && username !== user.username) {
+    if (user && username && username !== user.username) {
         navigate(`/${user.username}`, { replace: true })
     }
   }, [user, username, navigate])
@@ -73,7 +73,7 @@ export default function Dashboard() {
     fetch(`${BACKEND_URL}/api/db/get-problems?${params.toString()}`)
       .then(res => res.json())
       .then(resData => {
-        if (resData.success) setProblems(resData.data)
+        if (resData.success) setProblems(resData.data || [])
         setIsFetching(false)
       })
       .catch(err => {
@@ -167,7 +167,13 @@ export default function Dashboard() {
     return () => window.removeEventListener('click', closeMenus)
   }, [])
 
-  if (loading) return <div style={{ padding: '40px', color: '#888' }}>Loading Auth Profile...</div>
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#0a0518', color: '#aaa3c8', fontSize: '14px', fontFamily: 'sans-serif' }}>
+        Loading Auth Profile...
+      </div>
+    )
+  }
   if (!user) return null
 
   return (
@@ -264,7 +270,7 @@ export default function Dashboard() {
                 <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '180px' }}>
                   {selectedTags.length === 0 ? 'Select Tags...' : `Tags (${selectedTags.length})`}
                 </span>
-                <span>{isDropdownOpen ? '▲' : '▼'}</span>
+                <span style={{ fontSize: '10px', color: '#aaa3c8', transition: 'transform 0.2s', transform: isDropdownOpen ? 'rotate(180deg)' : 'none' }}>▼</span>
               </div>
               {isDropdownOpen && (
                 <div style={s.dropdownMenu}>
@@ -289,7 +295,7 @@ export default function Dashboard() {
             {isFetching ? (
               <p style={{ padding: '20px', color: '#888' }}>Loading challenges...</p>
             ) : problems.length === 0 ? (
-              <p style={{ padding: '20px', color: '#888' }}>No problems match criteria.</p>
+              <p style={{ padding: '32px', color: '#aaa3c8', fontSize: '14px', textAlign: 'center' }}>No problems match criteria.</p>
             ) : (
               problems.map(p => (
                 <div key={p.code} style={s.problemRow} onClick={() => navigate(`/${user.username}/${p.code}`)}>
@@ -300,7 +306,7 @@ export default function Dashboard() {
                   <span style={{ ...s.problemDifficulty, ...(p.difficulty === 'Easy' ? s.difficultyEasy : p.difficulty === 'Medium' ? s.difficultyMedium : s.difficultyHard) }}>
                     {p.difficulty}
                   </span>
-                  <span>→</span>
+                  <span style={{ color: '#6f6790', fontSize: '16px', fontWeight: '600' }}>→</span>
                 </div>
               ))
             )}
